@@ -1,0 +1,24 @@
+# secretos: nunca al repo
+.env*
+!.env.local.example
+.secrets.local.md
+*.pem
+
+# dependencias y builds
+node_modules/
+.next/
+out/
+build/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# sistema y editor
+.DS_Store
+Thumbs.db
+.claude/settings.local.json
+npm-debug.log*
+pnpm-debug.log*
+
+# temporales de la CLI de Supabase
+**/supabase/.temp/

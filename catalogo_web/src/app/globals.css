@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Paleta tomada del logo de Detalles Elena (rosa suave + blanco).
+   --------------------------------------------------------------------------- */
+@theme {
+  --color-rosa-50: #fdf5f7;
+  --color-rosa-100: #fbe9ee;
+  --color-rosa-200: #f7d5dd;
+  --color-rosa-300: #f0b6c1;
+  --color-rosa-400: #e691a2;
+  --color-rosa-500: #d9748c;
+  --color-rosa-600: #c15571;
+  --color-rosa-700: #9d4159;
+  --color-tinta: #3f2b31;
+  --color-tinta-suave: #6d565d;
+  --color-verde-wa: #25d366;
+
+  /* Pila del sistema: cero peticiones externas, clave para 4G */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-rosa-50);
+  color: var(--color-tinta);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Foco visible para navegación por teclado */
+:focus-visible {
+  outline: 2px solid var(--color-rosa-600);
+  outline-offset: 2px;
+}
+
+@utility contenedor {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}

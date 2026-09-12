@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "catalogo",
+      "runtimeExecutable": "corepack",
+      "runtimeArgs": ["pnpm", "--dir", "catalogo_web", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "admin",
+      "runtimeExecutable": "corepack",
+      "runtimeArgs": ["pnpm", "--dir", "detalles_admin", "dev"],
+      "port": 3001
+    }
+  ]
+}
