@@ -509,9 +509,10 @@ Pendiente, en orden:
 
 ## 9. Notas de entorno
 
-- Repo: cada app tiene su propio `.git` (los creó `create-next-app`) y **las dos están
-  sin un solo commit**. La raíz (`CLAUDE.md`, `supabase/`, `assets/`) no la versiona
-  nadie: si se borra, se pierde. Conviene hacer el primer commit antes de cambios grandes.
+- Repo: **un solo repositorio en la raíz**, `https://github.com/coroelena60-max/detalles_elena`
+  (rama `main`). Las dos apps son subcarpetas: en Vercel cada una es un proyecto aparte
+  con su *Root Directory* (`catalogo_web` o `detalles_admin`). El `.gitignore` de la raíz
+  deja afuera `.env*` (salvo los `.example`) y `.secrets.local.md`.
 - `.secrets.local.md` en la raíz guarda credenciales en claro: no copiar su contenido a
   ningún archivo versionado.
 - El `README.md` de la raíz quedó desactualizado (dice "proyectos recién inicializados");
