@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { Analytics } from '@vercel/analytics/next'
 import { CarritoProvider } from '@/lib/carrito/CarritoProvider'
 import Encabezado from '@/components/Encabezado'
 import PieDePagina from '@/components/PieDePagina'
@@ -35,6 +36,7 @@ export default function RootLayout({
           <main className="flex-1 pb-16">{children}</main>
           <PieDePagina />
         </CarritoProvider>
+        <Analytics />
       </body>
     </html>
   )
