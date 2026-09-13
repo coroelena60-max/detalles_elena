@@ -76,10 +76,12 @@ export async function registrarPago(
 // ---------------------------------------------------------------------------
 
 export interface LineaMostrador {
-  tipo: 'producto' | 'extra'
+  tipo: 'producto' | 'extra' | 'personalizado'
+  /** producto_id, extra_id o, en un ramo personalizado, envoltorio_id */
   id: number
   cantidad: number
   dedicatoria?: string
+  extras?: { extra_id: number; cantidad: number }[]
 }
 
 export async function crearVentaMostrador(
@@ -97,11 +99,20 @@ export async function crearVentaMostrador(
   }
   const items = lineas
     .filter((l) => l.cantidad > 0)
-    .map((l) =>
-      l.tipo === 'producto'
-        ? { tipo: 'producto', producto_id: l.id, cantidad: l.cantidad, dedicatoria: l.dedicatoria?.trim() || undefined }
-        : { tipo: 'extra', extra_id: l.id, cantidad: l.cantidad },
-    )
+    .map((l) => {
+      const dedicatoria = l.dedicatoria?.trim() || undefined
+      if (l.tipo === 'producto') return { tipo: 'producto', producto_id: l.id, cantidad: l.cantidad, dedicatoria }
+      if (l.tipo === 'personalizado') {
+        return {
+          tipo: 'personalizado',
+          envoltorio_id: l.id,
+          cantidad: l.cantidad,
+          dedicatoria,
+          extras: (l.extras ?? []).filter((e) => e.cantidad > 0),
+        }
+      }
+      return { tipo: 'extra', extra_id: l.id, cantidad: l.cantidad }
+    })
   if (items.length === 0) return { ok: false, mensaje: 'Agregá al menos un producto o extra.' }
 
   const sb = await clienteServidor()
