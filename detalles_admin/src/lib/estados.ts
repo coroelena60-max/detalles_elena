@@ -110,3 +110,8 @@ export const ESTADOS_PUBLICACION: Record<EstadoPublicacion, { etiqueta: string; 
   temporada: { etiqueta: 'De temporada', clase: 'bg-ok-suave text-ok' },
   inactivo: { etiqueta: 'Fuera del catálogo', clase: 'bg-alerta-suave text-alerta' },
 }
+
+/** Venta de mostrador → /ventas; todo lo que entra por el catálogo → /pedidos. */
+export function rutaPedido(codigo: string | null, canal: string | null): string {
+  return `${canal === 'mostrador' ? '/ventas' : '/pedidos'}/${codigo}`
+}

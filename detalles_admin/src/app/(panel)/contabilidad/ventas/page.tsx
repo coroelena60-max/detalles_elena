@@ -3,7 +3,7 @@ import Link from 'next/link'
 import Encabezado from '@/components/Encabezado'
 import FiltroFechas from '@/components/FiltroFechas'
 import { Barras, Cifra, Columnas, ErrorCarga, Etiqueta, Vacio } from '@/components/ui'
-import { ESTADOS, ESTADO_PAGO, METODOS_PAGO, type EstadoPedido, type MetodoPago } from '@/lib/estados'
+import { ESTADOS, ESTADO_PAGO, rutaPedido, METODOS_PAGO, type EstadoPedido, type MetodoPago } from '@/lib/estados'
 import { diaCorto, rangoDeParams } from '@/lib/fechas'
 import { bs, numero } from '@/lib/formato'
 import { exigirPermiso } from '@/lib/sesion'
@@ -134,7 +134,7 @@ export default async function PaginaVentasConfirmadas({
                         <td className="px-3 py-2 text-tinta-suave">{diaCorto(v.dia)}</td>
                         <td className="px-3 py-2 font-mono text-xs">
                           {verVentas ? (
-                            <Link href={`/ventas/${v.codigo}`} className="text-rosa-700 hover:underline">
+                            <Link href={rutaPedido(v.codigo, v.canal)} className="text-rosa-700 hover:underline">
                               {v.codigo}
                             </Link>
                           ) : (

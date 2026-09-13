@@ -73,8 +73,11 @@ export default async function PaginaPedido({
 
   return (
     <div>
-      <Link href="/ventas" className="text-sm text-rosa-700 hover:underline">
-        ← Pedidos
+      <Link
+        href={pedido.canal === 'mostrador' ? '/ventas' : '/pedidos'}
+        className="text-sm text-rosa-700 hover:underline"
+      >
+        ← {pedido.canal === 'mostrador' ? 'Ventas' : 'Pedidos'}
       </Link>
 
       <div className="mt-3 flex flex-wrap items-center gap-3">

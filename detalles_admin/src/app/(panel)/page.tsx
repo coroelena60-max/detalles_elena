@@ -34,7 +34,8 @@ export default async function PaginaTablero() {
     sb.from('v_tablero_admin').select('*').maybeSingle(),
     sb
       .from('pedido')
-      .select('codigo, estado, total, created_at, cliente:cliente_id (nombre)')
+      .select('codigo, estado, total, canal, created_at, cliente:cliente_id (nombre)')
+      .neq('canal', 'mostrador')
       .order('created_at', { ascending: false })
       .limit(6),
   ])
@@ -83,7 +84,7 @@ export default async function PaginaTablero() {
         <section className="mt-8">
           <div className="flex items-end justify-between gap-4">
             <h2 className="text-base font-semibold">Últimos pedidos</h2>
-            <Link href="/ventas" className="text-sm text-rosa-700 hover:underline">
+            <Link href="/pedidos" className="text-sm text-rosa-700 hover:underline">
               Ver todos
             </Link>
           </div>
@@ -96,7 +97,7 @@ export default async function PaginaTablero() {
                 return (
                   <li key={p.codigo}>
                     <Link
-                      href={`/ventas/${p.codigo}`}
+                      href={`/pedidos/${p.codigo}`}
                       className="tarjeta flex items-center gap-3 p-3 transition hover:border-rosa-300"
                     >
                       <span className="font-mono text-xs text-tinta-suave">

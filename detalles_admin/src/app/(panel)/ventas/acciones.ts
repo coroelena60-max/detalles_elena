@@ -32,6 +32,8 @@ export async function cambiarEstado(
   }
 
   revalidatePath(`/ventas/${codigo}`)
+  revalidatePath(`/pedidos/${codigo}`)
+  revalidatePath('/pedidos')
   revalidatePath('/ventas')
   revalidatePath('/')
   return { ok: true, mensaje: 'Estado actualizado.' }
@@ -61,6 +63,8 @@ export async function registrarPago(
   }
 
   revalidatePath(`/ventas/${codigo}`)
+  revalidatePath(`/pedidos/${codigo}`)
+  revalidatePath('/pedidos')
   revalidatePath('/ventas')
   revalidatePath('/')
   return { ok: true, mensaje: 'Pago registrado.' }

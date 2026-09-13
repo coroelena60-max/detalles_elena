@@ -76,11 +76,17 @@ export const MODULOS: Modulo[] = [
     ],
   },
   {
+    clave: 'pedido',
+    etiqueta: 'Pedidos',
+    base: '/pedidos',
+    secciones: [{ href: '/pedidos', etiqueta: 'Pedidos del catálogo', permisos: ['venta.ver'] }],
+  },
+  {
     clave: 'venta',
     etiqueta: 'Ventas',
     base: '/ventas',
     secciones: [
-      { href: '/ventas', etiqueta: 'Ventas', permisos: ['venta.ver'] },
+      { href: '/ventas', etiqueta: 'Ventas de mostrador', permisos: ['venta.ver'] },
       { href: '/ventas/clientes', etiqueta: 'Clientes', permisos: ['cliente.ver'] },
     ],
   },

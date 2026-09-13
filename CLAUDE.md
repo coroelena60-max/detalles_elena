@@ -241,7 +241,9 @@ Decisiones que conviene no re-discutir:
   slug se genera desde el nombre, y el de foto principal no toca la fila que un
   `on conflict` va a actualizar. Sin esas dos salvedades, `APLICAR_TODO.sql` deja de ser
   idempotente (pasó, y por eso está probado).
-- **Venta de mostrador y pedido web son la misma tabla**, se distinguen por `canal`.
+- **Venta de mostrador y pedido web son la misma tabla**, se distinguen por `canal`. En el panel son
+  dos módulos: **Pedidos** = catálogo web, **Ventas** = lo vendido en la tienda. La ficha es una sola
+  (`ventas/[codigo]`, re-exportada en `pedidos/[codigo]`); para enlazar usar `rutaPedido(codigo, canal)`.
 - Las recetas y los insumos están **vacíos**: el esquema existe, los datos los carga la
   dueña desde el panel. Mientras tanto `v_costo_producto` solo cuenta la mano de obra
   (por eso AB-XS-001 ya aparece a pérdida: Bs 20 de precio contra Bs 23,33 de tiempo).
@@ -402,7 +404,8 @@ Módulos construidos (todos los del diagrama):
 | Inventario | `/inventario` (stock de productos), `/inventario/extras` (con "producir" que descuenta la receta), `/inventario/movimientos` (kardex) |
 | Productos (maestro) | `/productos` (CRUD, fotos, composición), `/productos/personalizado` (extras con receta y foto, envoltorios, `/cotizador`), `/productos/categorias` |
 | Compras | `/compras` (borrador → insumos → recibir/anular), `/compras/insumos`, `/compras/proveedores` |
-| Ventas | `/ventas` (pedidos; antes `/pedidos`), `/ventas/nueva` (mostrador), `/ventas/clientes` |
+| Pedidos | `/pedidos` (lo que entra por el catálogo web, `canal <> 'mostrador'`) |
+| Ventas | `/ventas` (ventas de mostrador, `canal = 'mostrador'`), `/ventas/nueva`, `/ventas/clientes` |
 | Contabilidad | `/contabilidad` (gastos), `/contabilidad/ventas` (confirmadas), `/contabilidad/ganancias` |
 | Reportes | `/reportes` (ventas), `/reportes/compras` |
 

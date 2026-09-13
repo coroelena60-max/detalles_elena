@@ -7,14 +7,7 @@ export default function Marca({ className = '' }: { className?: string }) {
       >
         ❀
       </span>
-      <span className="leading-tight">
-        <span className="block text-base font-semibold tracking-tight text-tinta">
-          Detalles Elena
-        </span>
-        <span className="block text-[11px] uppercase tracking-widest text-tinta-suave">
-          hecho a mano
-        </span>
-      </span>
+      <span className="text-base font-semibold tracking-tight text-tinta">Detalles Elena</span>
     </span>
   )
 }
