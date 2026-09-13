@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import BotonExcel from '@/components/BotonExcel'
 import Encabezado from '@/components/Encabezado'
 import FiltroFechas from '@/components/FiltroFechas'
 import { Barras, Cifra, Columnas, ErrorCarga, Etiqueta, Vacio } from '@/components/ui'
@@ -60,7 +61,9 @@ export default async function PaginaReporteCompras({
         descripcion="Cuánto se invirtió en insumos, a quién y en qué. Suma solo las compras recibidas."
         modulo="reporte"
         permisos={sesion.permisos}
-      />
+      >
+        <BotonExcel tipo="compras" desde={desde} hasta={hasta} />
+      </Encabezado>
 
       <FiltroFechas ruta="/reportes/compras" desde={desde} hasta={hasta} />
 

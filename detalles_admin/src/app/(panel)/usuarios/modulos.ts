@@ -9,6 +9,7 @@ export const ETIQUETA_MODULO: Record<string, string> = {
   cotizacion: 'Cotización',
   inventario: 'Inventario',
   compra: 'Compras',
+  pedido: 'Pedidos',
   venta: 'Ventas',
   reporte: 'Reportes',
   contabilidad: 'Contabilidad',
@@ -16,6 +17,7 @@ export const ETIQUETA_MODULO: Record<string, string> = {
 
 /** Orden en el que conviene leerlos: primero lo de todos los días. */
 export const ORDEN_MODULO = [
+  'pedido',
   'venta',
   'maestro',
   'cotizacion',

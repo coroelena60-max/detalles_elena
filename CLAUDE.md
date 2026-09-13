@@ -135,11 +135,12 @@ Fuente de verdad: `supabase/migrations/`. Probadas contra Postgres 16 local
 | `0021_contabilidad_reportes_y_candados.sql` | candado de permiso en todas las RPC del panel, `gasto` + `categoria_gasto`, `anular_compra()`/`anular_gasto()`, reportes por rango (`reporte_ventas`, `reporte_compras`, `reporte_ventas_confirmadas`, `reporte_ganancias`, `reporte_bitacora`), vistas `v_kardex` y `v_cliente_resumen`, bitácora sin cambios vacíos |
 | `0022_venta_sin_cliente.sql` | cliente genérico **S/N** (teléfono `0000000`, protegido contra renombre/borrado); `crear_venta_mostrador(p_cliente => {"sin_cliente": true})` lo usa y el panel lo muestra como **S/C** |
 | `0023_cotizacion.sql` | módulo **Cotización**: `cotizacion` + `cotizacion_material` + `cotizacion_extra`, vista `v_cotizacion` (la cuenta), `guardar_cotizacion()`, `convertir_cotizacion_en_producto()`, y `crear_venta_mostrador()` acepta líneas `{"tipo":"cotizacion"}`; permisos `cotizacion.ver/editar` |
+| `0024_pedidos_agenda_respaldo.sql` | permisos `pedido.ver/editar` (catálogo) separados de `venta.*` (mostrador) con RLS por `canal` y `exigir_permiso_pedido()` en las RPC; `pedido.fecha_compromiso` + `programar_pedido()` + vista `v_agenda` (minutos de taller); permiso `respaldo.descargar` |
 
 ### Cómo aplicarlas
 
 Supabase → SQL Editor → pegar `supabase/APLICAR_TODO.sql` → Run.
-(Es la concatenación de las 23 en orden. Si se agrega una migración, regenerarlo.)
+(Es la concatenación de las 24 en orden. Si se agrega una migración, regenerarlo.)
 
 Storage: crear/usar el bucket `catalogo` y subir `assets/catalogo/` manteniendo las
 subcarpetas `productos/`, `extras/`, `marca/`. Recién después correr `0009`.
@@ -382,6 +383,11 @@ Reglas del panel:
   a 5; `precio_final` lo pisa. La cuenta vive en `v_cotizacion` (la pantalla la repite solo para mostrar en vivo).
   Vendida en mostrador entra como línea `personalizado` con `cotizacion_id`; sus extras van a Bs 0 para que la
   entrega descuente stock.
+- **Pedido y venta tienen permisos distintos.** El permiso de una fila de `pedido` sale de su canal:
+  `permiso_de_pedido(canal, 'ver'|'editar')` → `venta.*` si es mostrador, `pedido.*` si no. Las RPC que tocan un
+  pedido llaman `exigir_permiso_pedido(id, ...)`, no `exigir_permiso('venta.editar')`.
+- **Aviso de pedidos nuevos**: `Navegacion` consulta `/api/pedidos/pendientes` cada 30 s (badge, sonido, título de
+  la pestaña y notificación del navegador si se permitió). Es sondeo, no Realtime: no hace falta publicar tablas.
 - **Gasto ≠ compra.** Una compra trae insumos que entran al inventario; un gasto es plata
   que sale y no vuelve como mercadería (alquiler, luz, delivery, publicidad). Un gasto no
   se edita ni se borra (grant revocado): se anula con motivo.
@@ -414,6 +420,8 @@ Módulos construidos (todos los del diagrama):
 | Productos (maestro) | `/productos` (CRUD, fotos, composición), `/productos/personalizado` (extras con receta y foto, envoltorios, `/cotizador`), `/productos/categorias` |
 | Compras | `/compras` (borrador → insumos → recibir/anular), `/compras/insumos`, `/compras/proveedores` |
 | Pedidos | `/pedidos` (lo que entra por el catálogo web, `canal <> 'mostrador'`) |
+| Agenda | `/pedidos/agenda`: semana con carga de taller vs `minutos_taller_dia`, atrasados y sin fecha |
+| Descargas | `/api/exportar/[tipo]` (CSV para Excel: gastos, ventas-confirmadas, ganancias, ventas, compras), `/api/respaldo` (JSON de todas las tablas), `/comprobante/[codigo]` (imprimible, fuera del layout) |
 | Ventas | `/ventas` (ventas de mostrador, `canal = 'mostrador'`), `/ventas/nueva`, `/ventas/clientes` |
 | Contabilidad | `/contabilidad` (gastos), `/contabilidad/ventas` (confirmadas), `/contabilidad/ganancias` |
 | Reportes | `/reportes` (ventas), `/reportes/compras` |

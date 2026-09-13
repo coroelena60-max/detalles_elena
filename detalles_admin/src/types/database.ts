@@ -607,6 +607,13 @@ export type Database = {
             foreignKeyName: "entrega_pedido_id_fkey"
             columns: ["pedido_id"]
             isOneToOne: true
+            referencedRelation: "v_agenda"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entrega_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: true
             referencedRelation: "v_pedido_saldo"
             referencedColumns: ["id"]
           },
@@ -1201,6 +1208,13 @@ export type Database = {
             foreignKeyName: "movimiento_inventario_pedido_id_fkey"
             columns: ["pedido_id"]
             isOneToOne: false
+            referencedRelation: "v_agenda"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimiento_inventario_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
             referencedRelation: "v_pedido_saldo"
             referencedColumns: ["id"]
           },
@@ -1311,6 +1325,13 @@ export type Database = {
             foreignKeyName: "pago_pedido_id_fkey"
             columns: ["pedido_id"]
             isOneToOne: false
+            referencedRelation: "v_agenda"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pago_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
             referencedRelation: "v_pedido_saldo"
             referencedColumns: ["id"]
           },
@@ -1363,6 +1384,7 @@ export type Database = {
           entregado_at: string | null
           enviado_whatsapp_at: string | null
           estado: Database["public"]["Enums"]["estado_pedido"]
+          fecha_compromiso: string | null
           id: number
           nota_cliente: string | null
           nota_interna: string | null
@@ -1382,6 +1404,7 @@ export type Database = {
           entregado_at?: string | null
           enviado_whatsapp_at?: string | null
           estado?: Database["public"]["Enums"]["estado_pedido"]
+          fecha_compromiso?: string | null
           id?: never
           nota_cliente?: string | null
           nota_interna?: string | null
@@ -1401,6 +1424,7 @@ export type Database = {
           entregado_at?: string | null
           enviado_whatsapp_at?: string | null
           estado?: Database["public"]["Enums"]["estado_pedido"]
+          fecha_compromiso?: string | null
           id?: never
           nota_cliente?: string | null
           nota_interna?: string | null
@@ -1554,6 +1578,13 @@ export type Database = {
             columns: ["pedido_id"]
             isOneToOne: false
             referencedRelation: "pedido"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_item_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "v_agenda"
             referencedColumns: ["id"]
           },
           {
@@ -2332,6 +2363,25 @@ export type Database = {
       }
     }
     Views: {
+      v_agenda: {
+        Row: {
+          canal: string | null
+          cliente: string | null
+          codigo: string | null
+          created_at: string | null
+          direccion: string | null
+          estado: Database["public"]["Enums"]["estado_pedido"] | null
+          fecha_compromiso: string | null
+          franja_horaria: string | null
+          id: number | null
+          minutos: number | null
+          resumen: string | null
+          telefono: string | null
+          tipo_entrega: Database["public"]["Enums"]["tipo_entrega"] | null
+          total: number | null
+        }
+        Relationships: []
+      }
       v_catalogo_producto: {
         Row: {
           categoria_id: number | null
@@ -2955,6 +3005,10 @@ export type Database = {
         Returns: Database["public"]["Enums"]["estado_pedido"][]
       }
       exigir_permiso: { Args: { p_codigo: string }; Returns: undefined }
+      exigir_permiso_pedido: {
+        Args: { p_accion: string; p_pedido_id: number }
+        Returns: undefined
+      }
       generar_codigo_producto: {
         Args: { p_envoltorio_id: number }
         Returns: string
@@ -2977,9 +3031,21 @@ export type Database = {
         Returns: number
       }
       perfil_es_superadmin: { Args: { p_perfil: string }; Returns: boolean }
+      permiso_de_pedido: {
+        Args: { p_accion: string; p_canal: string }
+        Returns: string
+      }
       producir_extra: {
         Args: { p_cantidad: number; p_extra_id: number }
         Returns: Json
+      }
+      programar_pedido: {
+        Args: { p_fecha: string; p_pedido_id: number }
+        Returns: Json
+      }
+      puede_pedido: {
+        Args: { p_accion: string; p_pedido_id: number }
+        Returns: boolean
       }
       puede_ver_perfil: { Args: { p_perfil: string }; Returns: boolean }
       puede_ver_rol: { Args: { p_rol: number }; Returns: boolean }

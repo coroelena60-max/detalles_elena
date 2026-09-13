@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import AnularConMotivo from '@/components/AnularConMotivo'
+import BotonExcel from '@/components/BotonExcel'
 import Encabezado from '@/components/Encabezado'
 import FiltroFechas from '@/components/FiltroFechas'
 import { Barras, Cifra, ErrorCarga, Etiqueta, Vacio } from '@/components/ui'
@@ -72,7 +73,9 @@ export default async function PaginaGastos({
         descripcion="Lo que sale y no vuelve como mercadería: alquiler, luz, delivery, publicidad. Las compras de insumos van en Compras."
         modulo="contabilidad"
         permisos={sesion.permisos}
-      />
+      >
+        {sesion.permisos.has('contabilidad.ver') && <BotonExcel tipo="gastos" desde={desde} hasta={hasta} />}
+      </Encabezado>
 
       {puedeRegistrar && (
         <div className="mt-4">

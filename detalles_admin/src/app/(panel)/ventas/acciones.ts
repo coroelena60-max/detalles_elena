@@ -152,3 +152,18 @@ export async function guardarCliente(
   revalidatePath(`/ventas/clientes/${id}`)
   return { ok: true, mensaje: 'Cliente actualizado.' }
 }
+
+// ---------------------------------------------------------------------------
+// Agenda: el día en que el pedido tiene que estar listo
+// ---------------------------------------------------------------------------
+
+export async function programarPedido(codigo: string, pedidoId: number, fecha: string | null): Promise<Resultado> {
+  if (fecha !== null && !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return { ok: false, mensaje: 'Revisá la fecha.' }
+  const sb = await clienteServidor()
+  const { error } = await sb.rpc('programar_pedido', { p_pedido_id: pedidoId, p_fecha: fecha as string })
+  if (error) return { ok: false, mensaje: traducirError(error.message) }
+  revalidatePath(`/ventas/${codigo}`)
+  revalidatePath(`/pedidos/${codigo}`)
+  revalidatePath('/pedidos/agenda')
+  return { ok: true, mensaje: fecha ? 'Fecha guardada.' : 'Quitado de la agenda.' }
+}

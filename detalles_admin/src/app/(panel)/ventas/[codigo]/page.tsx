@@ -2,9 +2,10 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Miniatura from '@/components/Miniatura'
+import ProgramarFecha from '@/components/ProgramarFecha'
 import { ESTADOS, ESTADO_PAGO, METODOS_PAGO, fotoPrincipal, nombreCliente } from '@/lib/estados'
 import { bs, fechaHora, numero } from '@/lib/formato'
-import { exigirPermiso } from '@/lib/sesion'
+import { exigirSesion } from '@/lib/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import AccionesPedido from './AccionesPedido'
 
@@ -24,7 +25,8 @@ export default async function PaginaPedido({
 }: {
   params: Promise<{ codigo: string }>
 }) {
-  const sesion = await exigirPermiso('venta.ver')
+  // el permiso depende del canal (pedido.* o venta.*): RLS no devuelve lo que no se puede ver
+  const sesion = await exigirSesion()
   const { codigo: crudo } = await params
   const codigo = crudo.toUpperCase()
   const sb = await clienteServidor()
@@ -33,7 +35,7 @@ export default async function PaginaPedido({
     .from('pedido')
     .select(
       `id, codigo, estado, tipo_entrega, subtotal, costo_envio, descuento, total,
-       nota_cliente, nota_interna, canal, created_at, enviado_whatsapp_at, entregado_at,
+       nota_cliente, nota_interna, canal, created_at, fecha_compromiso, enviado_whatsapp_at, entregado_at,
        cliente:cliente_id (nombre, telefono, email),
        entrega (direccion, referencia, destinatario, telefono, fecha_entrega, instrucciones,
                 zona:zona_envio_id (nombre, costo_referencia)),
@@ -95,6 +97,12 @@ export default async function PaginaPedido({
           {pedido.canal === 'mostrador' ? 'Mostrador' : 'Catálogo web'} ·{' '}
           {fechaHora(pedido.created_at)}
         </span>
+        <Link
+          href={`/comprobante/${codigo}`}
+          className="ml-auto rounded-lg border border-linea bg-white px-3 py-1.5 text-sm transition hover:bg-rosa-50"
+        >
+          🧾 Comprobante
+        </Link>
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_20rem]">
@@ -263,6 +271,17 @@ export default async function PaginaPedido({
             ) : (
               <p className="mt-2 text-sm">Retira en la tienda.</p>
             )}
+            <div className="mt-3 border-t border-linea pt-3">
+              <p className="text-xs font-medium text-tinta-suave">Tenerlo listo para el día (agenda)</p>
+              {sesion.permisos.has(pedido.canal === 'mostrador' ? 'venta.editar' : 'pedido.editar') &&
+              pedido.estado !== 'entregado' && pedido.estado !== 'cancelado' ? (
+                <div className="mt-1">
+                  <ProgramarFecha codigo={codigo} pedidoId={pedido.id} fecha={pedido.fecha_compromiso} />
+                </div>
+              ) : (
+                <p className="mt-1 text-sm">{pedido.fecha_compromiso ?? 'Sin fecha'}</p>
+              )}
+            </div>
           </section>
 
           <AccionesPedido
@@ -270,7 +289,7 @@ export default async function PaginaPedido({
             pedidoId={pedido.id}
             estado={pedido.estado}
             saldo={Number(saldo?.saldo ?? 0)}
-            puedeEditar={sesion.permisos.has('venta.editar')}
+            puedeEditar={sesion.permisos.has(pedido.canal === 'mostrador' ? 'venta.editar' : 'pedido.editar')}
             puedeCobrar={sesion.permisos.has('pago.registrar')}
           />
 

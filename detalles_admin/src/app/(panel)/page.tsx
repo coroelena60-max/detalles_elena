@@ -40,7 +40,7 @@ export default async function PaginaTablero() {
       .limit(6),
   ])
 
-  const puedeVerVentas = sesion.permisos.has('venta.ver')
+  const puedeVerVentas = sesion.permisos.has('pedido.ver')
 
   return (
     <div>

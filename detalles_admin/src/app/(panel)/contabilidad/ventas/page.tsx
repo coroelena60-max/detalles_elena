@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import BotonExcel from '@/components/BotonExcel'
 import Encabezado from '@/components/Encabezado'
 import FiltroFechas from '@/components/FiltroFechas'
 import { Barras, Cifra, Columnas, ErrorCarga, Etiqueta, Vacio } from '@/components/ui'
@@ -50,7 +51,7 @@ export default async function PaginaVentasConfirmadas({
     p_hasta: hasta,
   })
   const r = data as unknown as Reporte | null
-  const verVentas = sesion.permisos.has('venta.ver')
+  const verVentas = sesion.permisos.has('venta.ver') || sesion.permisos.has('pedido.ver')
 
   return (
     <div>
@@ -59,7 +60,9 @@ export default async function PaginaVentasConfirmadas({
         descripcion="Los pedidos que ya son plata comprometida: confirmados, en producción, listos o entregados. Los nuevos sin confirmar y los cancelados no cuentan."
         modulo="contabilidad"
         permisos={sesion.permisos}
-      />
+      >
+        <BotonExcel tipo="ventas-confirmadas" desde={desde} hasta={hasta} />
+      </Encabezado>
 
       <FiltroFechas ruta="/contabilidad/ventas" desde={desde} hasta={hasta} />
 

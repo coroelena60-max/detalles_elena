@@ -52,7 +52,7 @@ export default async function ListaPedidos({
   searchParams: Promise<{ filtro?: string; q?: string }>
 }) {
   const t = TIPOS[tipo]
-  const sesion = await exigirPermiso('venta.ver')
+  const sesion = await exigirPermiso(tipo === 'pedidos' ? 'pedido.ver' : 'venta.ver')
   const { filtro: f, q } = await searchParams
   const filtro = f && f in ESTADOS_POR_FILTRO ? f : t.filtroInicial
   const sb = await clienteServidor()

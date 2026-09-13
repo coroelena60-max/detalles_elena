@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import BotonExcel from '@/components/BotonExcel'
 import Encabezado from '@/components/Encabezado'
 import FiltroFechas from '@/components/FiltroFechas'
 import { Barras, Cifra, Columnas, ErrorCarga } from '@/components/ui'
@@ -54,7 +55,9 @@ export default async function PaginaReporteVentas({
         descripcion="Qué se vende, cuándo y por dónde entra. Cuenta como vendido solo lo confirmado; lo que quedó sin confirmar aparece aparte."
         modulo="reporte"
         permisos={sesion.permisos}
-      />
+      >
+        <BotonExcel tipo="ventas" desde={desde} hasta={hasta} />
+      </Encabezado>
 
       <FiltroFechas ruta="/reportes" desde={desde} hasta={hasta} />
 

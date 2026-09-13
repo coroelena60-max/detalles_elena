@@ -39,6 +39,7 @@ export const MODULOS: Modulo[] = [
       { href: '/usuarios/roles', etiqueta: 'Roles', permisos: ['rol.ver'] },
       { href: '/usuarios/permisos', etiqueta: 'Permisos', permisos: ['rol.ver'] },
       { href: '/usuarios/bitacora', etiqueta: 'Bitácora', permisos: ['bitacora.ver'] },
+      { href: '/usuarios/respaldo', etiqueta: 'Respaldo', permisos: ['respaldo.descargar'] },
     ],
   },
   {
@@ -85,7 +86,10 @@ export const MODULOS: Modulo[] = [
     clave: 'pedido',
     etiqueta: 'Pedidos',
     base: '/pedidos',
-    secciones: [{ href: '/pedidos', etiqueta: 'Pedidos del catálogo', permisos: ['venta.ver'] }],
+    secciones: [
+      { href: '/pedidos', etiqueta: 'Pedidos del catálogo', permisos: ['pedido.ver'] },
+      { href: '/pedidos/agenda', etiqueta: 'Agenda de entregas', permisos: ['pedido.ver', 'venta.ver'] },
+    ],
   },
   {
     clave: 'venta',

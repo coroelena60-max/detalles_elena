@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import BotonExcel from '@/components/BotonExcel'
 import Encabezado from '@/components/Encabezado'
 import FiltroFechas from '@/components/FiltroFechas'
 import { Barras, Cifra, Columnas, ErrorCarga } from '@/components/ui'
@@ -71,7 +72,9 @@ export default async function PaginaGanancias({
         descripcion="Cuánto dejó la tienda: lo vendido, menos lo que se compró para producir, menos los gastos."
         modulo="contabilidad"
         permisos={sesion.permisos}
-      />
+      >
+        <BotonExcel tipo="ganancias" desde={desde} hasta={hasta} />
+      </Encabezado>
 
       <FiltroFechas ruta="/contabilidad/ganancias" desde={desde} hasta={hasta} />
 

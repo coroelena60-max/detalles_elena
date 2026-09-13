@@ -43,7 +43,7 @@ export default async function LayoutPanel({
           </div>
         </div>
         <div className="mx-auto max-w-6xl px-4 pb-2">
-          <Navegacion enlaces={enlaces} />
+          <Navegacion enlaces={enlaces} vigilarPedidos={sesion.permisos.has('pedido.ver')} />
         </div>
       </header>
 
