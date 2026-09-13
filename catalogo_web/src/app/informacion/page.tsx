@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { enlaceConsultaWhatsapp } from '@/lib/whatsapp'
+import Link from 'next/link'
+import { enlaceConsultaWhatsapp, numeroWhatsappVisible } from '@/lib/whatsapp'
 
 export const metadata: Metadata = { title: 'Información' }
 
@@ -33,7 +34,7 @@ export default function PaginaInformacion() {
                 rel="noopener noreferrer"
                 className="text-rosa-700 hover:underline"
               >
-                WhatsApp 63398762
+                WhatsApp {numeroWhatsappVisible()}
               </a>
             </li>
             <li>
@@ -74,6 +75,21 @@ export default function PaginaInformacion() {
             varios días de anticipación, porque la producción es artesanal y tiene un
             tope diario.
           </p>
+        </section>
+
+        <section className="rounded-2xl border border-rosa-200 bg-white p-5 sm:col-span-2">
+          <h2 className="text-base font-semibold">Condiciones y privacidad</h2>
+          <p className="mt-2 text-sm text-tinta-suave">
+            Cómo funcionan los pedidos, cambios y reclamos, y qué hacemos con tus datos.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+            <Link href="/terminos" className="text-rosa-700 hover:underline">
+              Términos y condiciones
+            </Link>
+            <Link href="/privacidad" className="text-rosa-700 hover:underline">
+              Política de privacidad
+            </Link>
+          </div>
         </section>
       </div>
     </div>

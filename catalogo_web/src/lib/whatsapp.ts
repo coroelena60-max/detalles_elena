@@ -16,6 +16,11 @@ export function mensajePedido(codigo: string, nombre: string, total: number) {
   ].join('\n')
 }
 
+/** El número para mostrar en pantalla (sin el 591 de Bolivia). */
+export function numeroWhatsappVisible(numero = WHATSAPP_NUMBER) {
+  return numero.startsWith('591') ? numero.slice(3) : numero
+}
+
 export function enlaceWhatsapp(texto: string, numero = WHATSAPP_NUMBER) {
   const base = numero ? `https://wa.me/${numero}` : 'https://wa.me/'
   return `${base}?text=${encodeURIComponent(texto)}`

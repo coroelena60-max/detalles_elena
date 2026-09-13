@@ -6,8 +6,8 @@ Una sola base para las dos apps: el catálogo web (anónimo) y el panel admin
 ## Aplicar todo
 Supabase → SQL Editor → pegar `APLICAR_TODO.sql` → Run. Es idempotente.
 
-Estado actual: las 18 migraciones están aplicadas en el proyecto real
-(`nrwamzgxwttgvaqqodfp`).
+Trae las 24 migraciones (0001–0024). Qué está aplicado en el proyecto real
+(`nrwamzgxwttgvaqqodfp`) se lleva en `../CLAUDE.md` §8.
 
 ## Fotos
 1. Storage → bucket `catalogo` (lo crea la migración 0006).
@@ -38,6 +38,11 @@ un permiso concreto (`public.tiene_permiso('venta.editar')`).
 | 0016 | Seed de roles y permisos |
 | 0017 | Permisos de solo lectura, roles protegidos y el maestro listo para CRUD |
 | 0018 | Endurecer privilegios heredados (`TRUNCATE` fuera de `anon`) |
+| 0019–0020 | Usuarios del panel, candados de administradores y rol `superadmin` invisible |
+| 0021 | Candados de permiso en las RPC, gastos, anulaciones y reportes por rango |
+| 0022 | Cliente genérico S/N para ventas de mostrador sin cliente |
+| 0023 | Cotización (calculadora de costo y precio) |
+| 0024 | Permisos `pedido.*` separados de `venta.*`, agenda y respaldo |
 
 ## Agregar una migración
 1. Crear `migrations/NNNN_descripcion.sql` (idempotente).

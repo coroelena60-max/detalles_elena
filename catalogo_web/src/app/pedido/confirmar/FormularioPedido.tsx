@@ -52,6 +52,7 @@ export default function FormularioPedido({ zonas }: { zonas: ZonaEnvio[] }) {
       fechaEntrega: String(f.get('fecha') ?? ''),
       instrucciones: String(f.get('instrucciones') ?? ''),
       nota: String(f.get('nota') ?? ''),
+      aceptaCondiciones: f.get('aceptaCondiciones') === 'si',
       items: lineas.map((l) => ({
         tipo: l.tipo,
         referenciaId: l.referenciaId,
@@ -205,6 +206,11 @@ export default function FormularioPedido({ zonas }: { zonas: ZonaEnvio[] }) {
                   <input name="telefonoEntrega" inputMode="tel" className={claseCampo} />
                 </label>
 
+                <p className="text-xs text-tinta-suave sm:col-span-2">
+                  Si nos das los datos de otra persona, que sea con su permiso: los
+                  usamos solo para la entrega.
+                </p>
+
                 <label className="block text-sm">
                   Fecha deseada
                   <input name="fecha" type="date" className={claseCampo} />
@@ -255,6 +261,35 @@ export default function FormularioPedido({ zonas }: { zonas: ZonaEnvio[] }) {
               <span className="text-sm text-tinta-suave">Subtotal</span>
               <strong className="text-lg">{bs(total)}</strong>
             </div>
+
+            <label className="mt-5 flex items-start gap-2.5 text-xs leading-relaxed text-tinta-suave">
+              <input
+                type="checkbox"
+                name="aceptaCondiciones"
+                value="si"
+                required
+                className="mt-0.5 size-4 shrink-0 accent-rosa-600"
+              />
+              <span>
+                Acepto los{' '}
+                <Link
+                  href="/terminos"
+                  target="_blank"
+                  className="text-rosa-700 underline"
+                >
+                  términos y condiciones
+                </Link>{' '}
+                y autorizo el uso de mis datos para gestionar este pedido, según la{' '}
+                <Link
+                  href="/privacidad"
+                  target="_blank"
+                  className="text-rosa-700 underline"
+                >
+                  política de privacidad
+                </Link>
+                .
+              </span>
+            </label>
 
             {error && (
               <p

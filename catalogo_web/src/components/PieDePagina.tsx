@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Marca from '@/components/Marca'
+import { numeroWhatsappVisible } from '@/lib/whatsapp'
 
 export default function PieDePagina() {
   const anio = new Date().getFullYear()
@@ -25,7 +26,7 @@ export default function PieDePagina() {
         <div>
           <h2 className="text-sm font-semibold">Contacto</h2>
           <ul className="mt-3 space-y-2 text-sm text-tinta-suave">
-            <li>WhatsApp 63398762</li>
+            <li>WhatsApp {numeroWhatsappVisible()}</li>
             <li>TikTok @detalles_elenac</li>
           </ul>
           <p className="mt-4 text-xs text-tinta-suave">
@@ -33,9 +34,11 @@ export default function PieDePagina() {
           </p>
         </div>
       </div>
-      <p className="contenedor pb-8 text-xs text-tinta-suave">
-        © {anio} Detalles Elena. Todos los derechos reservados.
-      </p>
+      <div className="contenedor flex flex-wrap gap-x-4 gap-y-2 pb-8 text-xs text-tinta-suave">
+        <p>© {anio} Detalles Elena. Todos los derechos reservados.</p>
+        <Link className="hover:text-rosa-700" href="/terminos">Términos y condiciones</Link>
+        <Link className="hover:text-rosa-700" href="/privacidad">Política de privacidad</Link>
+      </div>
     </footer>
   )
 }

@@ -14,14 +14,13 @@ Dos aplicaciones independientes sobre una sola base de datos Supabase.
 
 | Carpeta | Qué es | Puerto dev | Estado |
 |---|---|---|---|
-| `catalogo_web/` | Catálogo público. El cliente elige productos, arma el carrito, confirma y se crea el pedido en BD. El código del pedido se manda al WhatsApp de la tienda y la venta se cierra ahí. | 3000 | **EN CURSO** |
+| `catalogo_web/` | Catálogo público. El cliente elige productos, arma el carrito, confirma y se crea el pedido en BD. El código del pedido se manda al WhatsApp de la tienda y la venta se cierra ahí. | 3000 | **En uso** (entran pedidos reales) |
 | `detalles_admin/` | Panel administrativo de la tienda. | 3001 | **Todos los módulos construidos**, falta probarlos con datos reales |
-| `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | Escritas y probadas; falta aplicarlas en el proyecto real |
-| `assets/catalogo/` | 33 fotos optimizadas a WebP, listas para subir al bucket `catalogo`. | — | Listas |
+| `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | 0001–0024 en `APLICAR_TODO.sql`; ver §8 qué está aplicado |
+| `assets/catalogo/` | 33 fotos optimizadas a WebP, ya subidas al bucket `catalogo`. | — | Subidas |
 
-**El catálogo web está terminado y en uso** (ya entran pedidos reales). La prioridad
-ahora es el panel admin, módulo por módulo, siguiendo el diagrama del dueño:
-administración, inventario, maestro, compra, venta y reportes.
+El catálogo y todos los módulos del panel (según el diagrama del dueño: administración,
+inventario, maestro, compra, venta y reportes) están construidos. Lo que sigue está en §8.
 
 ---
 
@@ -83,12 +82,20 @@ No hay framework de tests configurado (ni Jest, ni Vitest, ni Playwright). La ve
 hoy es `type-check` + `lint` + `build` + prueba manual del flujo en el navegador.
 Si se agregan tests, documentar acá cómo correr uno solo.
 
-Regenerar los tipos de la BD (solo después de aplicar las migraciones):
+Desde la raíz, sin `cd`: `corepack pnpm --dir detalles_admin type-check` (igual con
+`catalogo_web`). En `.claude/launch.json` están los servidores `catalogo` (:3000) y
+`admin` (:3001) para el panel de vista previa.
+
+Regenerar los tipos de la BD — **solo en el panel**, después de aplicar una migración
+(necesita `SUPABASE_ACCESS_TOKEN` en el entorno):
 
 ```powershell
-cd catalogo_web
-pnpm dlx supabase gen types typescript --project-id nrwamzgxwttgvaqqodfp > src/types/database.ts
+cd detalles_admin
+corepack pnpm dlx supabase gen types typescript --project-id nrwamzgxwttgvaqqodfp --schema public > src/types/database.ts
 ```
+
+**No correrlo en `catalogo_web`**: sus tipos están escritos a mano y regenerarlos rompe
+los imports (ver §8).
 
 ### Variables de entorno
 
@@ -282,6 +289,17 @@ INFORMACION   datos de la tienda · contacto y redes
   (`agotado` no se puede agregar al carrito).
 - `precio_desde = true` → mostrar "desde Bs X" en vez de precio fijo.
 - Mostrar el plazo de entrega (`lead_time_dias`) en la ficha del producto.
+- **Legal** (`/terminos`, `/privacidad`, molde en `components/DocumentoLegal.tsx`): Bolivia no
+  tiene ley general de datos personales (verificado 2026-09); se sigue CPE arts. 21/130/131,
+  Ley 164 + DS 1793 arts. 56–57 (consentimiento previo y expreso) y Ley 453 (consumidor).
+  El formulario exige la casilla `aceptaCondiciones` y `crearPedido()` la vuelve a
+  validar; el consentimiento **no se guarda en la BD** (no hay columna).
+  `AvisoPrivacidad` es una barrita **informativa** abajo (no un modal que bloquee: decisión
+  del dueño, por el tráfico de TikTok en 4G); se recuerda en localStorage y no sale en
+  `/pedido/confirmar`, `/pedido/personalizado` (tiene su barra fija) ni en las legales. Si cambia lo que
+  se hace con los datos (nuevo proveedor, promociones, cookies), actualizar
+  `/privacidad` y `FECHA_LEGAL` en `src/lib/legal.ts`. Ningún texto de esas páginas puede
+  recortar los derechos de la Ley 453 (plazos para reclamar, renuncias): son cláusulas abusivas.
 
 ---
 
@@ -347,7 +365,7 @@ Construido sobre el mismo Supabase, pero con sesión: el panel usa la clave publ
 | `src/proxy.ts` | Refresca la sesión en cada request y manda al login si no hay. En Next 16 esto reemplaza a `middleware.ts` (mismo archivo, función `proxy`). |
 | `src/lib/supabase/servidor.ts` | Cliente para Server Components y server actions, con las cookies de la sesión. |
 | `src/lib/sesion.ts` | `obtenerSesion()` (perfil + permisos vía la RPC `mis_permisos`), `exigirSesion()` y `exigirPermiso('venta.ver')`. |
-| `src/lib/estados.ts` | Etiquetas y colores de cada estado, el siguiente paso natural del pedido, y la lista de MÓDULOS con el permiso que abre cada uno. |
+| `src/lib/estados.ts` | Etiquetas y colores de cada estado, el siguiente paso natural del pedido. (El mapa de módulos y sus permisos está en `src/lib/modulos.ts`.) |
 | `src/app/(panel)/layout.tsx` | Shell: cabecera, navegación filtrada por permiso y el aviso de "tu cuenta no tiene rol". |
 | `src/types/database.ts` | **Generado** con `supabase gen types`. A diferencia del catálogo, acá los tipos salen de la base. Regenerar después de cada migración. |
 
@@ -465,6 +483,10 @@ Además faltan en el catálogo (existen en PRECIOS.docx pero **sin foto**, así 
 cargaron): cono M con 1 girasol y 7 rosas (Bs 60), cono M con 3 girasoles (Bs 55),
 cono L con 5 girasoles (Bs 85), cono S con 1 girasol (Bs 20), caja corazón (Bs 130).
 
+Textos legales (2026-09-13): confirmar con Elena la política de **cambios y
+cancelaciones** de `/terminos` (hoy: gratis antes de empezar la producción, caso por caso
+después) y si se agrega NIT o nombre del titular. Conviene que un abogado boliviano los revise.
+
 El extra "Hot Wheels" a Bs 15 probablemente se vende a pérdida (la caja sola cuesta
 Bs 8,33 y falta el costo del autito).
 
@@ -503,7 +525,7 @@ Hecho (último corte: 2026-09-12):
 - [x] **Privilegios heredados cerrados** (0018): `anon` tenía `TRUNCATE` sobre
       `producto`, `pedido` y `cliente` por los defaults de Supabase — y TRUNCATE no
       respeta RLS
-- [x] `APLICAR_TODO.sql` (18 migraciones) re-ejecutado entero sobre la base ya
+- [x] `APLICAR_TODO.sql` (entonces con 18 migraciones; hoy trae las 24) re-ejecutado entero sobre la base ya
       aplicada: pasa sin tocar un dato
 - [x] **Panel admin arrancado**: auth con Supabase (login + proxy de sesión), tipos
       generados desde la base, shell con navegación por permiso, tablero, módulo de
@@ -538,10 +560,8 @@ Pendiente, en orden:
    están en PRECIOS.docx pero sin foto.
 3. **Cargar insumos, proveedores y recetas** desde el panel (o por seed) para que el
    costeo deje de contar solo la mano de obra.
-4. Seguir el panel admin por módulos. Hecho: login + tablero + ventas + productos +
-   administración (usuarios, roles, permisos, bitácora).
-   **Hecho: todos los módulos del diagrama.** Sigue: probarlos con datos reales
-   (cargar insumos, proveedores y recetas) y ajustar lo que la dueña encuentre.
+4. Probar los módulos del panel con datos reales y ajustar lo que la dueña encuentre.
+   Confirmar que 0022–0024 estén aplicadas en el proyecto real (no quedó registrado).
    Para sumar a Elena: crear su cuenta en Supabase (Authentication → Add user) y darle
    el rol desde `/usuarios`; el SQL Editor ya no hace falta.
 5. Tipos de la BD: `catalogo_web/src/types/database.ts` sigue escrito a mano y
@@ -559,8 +579,8 @@ Pendiente, en orden:
   deja afuera `.env*` (salvo los `.example`) y `.secrets.local.md`.
 - `.secrets.local.md` en la raíz guarda credenciales en claro: no copiar su contenido a
   ningún archivo versionado.
-- El `README.md` de la raíz quedó desactualizado (dice "proyectos recién inicializados");
-  este archivo es la fuente de verdad del estado.
+- Este archivo es la fuente de verdad del estado; `README.md` y `supabase/README.md`
+  solo resumen.
 - Esta carpeta vive en `C:\Users\LENOVO\source\detalles-elena\` (Windows).
 - Las migraciones se validaron en un Postgres 16 local con roles `anon`,
   `authenticated` y `service_role` simulados; útil para repetir la prueba antes

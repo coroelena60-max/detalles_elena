@@ -23,5 +23,7 @@ pnpm dev
 Lo mismo en `detalles_admin` (arranca en el puerto 3001).
 
 ## Estado
-Proyectos recién inicializados. Pendiente: delimitación sustantiva, requerimientos
-funcionales y diseño de la base de datos antes de escribir código de dominio.
+Catálogo en uso y todos los módulos del panel construidos. El estado detallado, las
+reglas y el modelo de datos están en `CLAUDE.md`.
+
+En esta máquina `pnpm` no está en el PATH: usar `corepack pnpm <script>`.

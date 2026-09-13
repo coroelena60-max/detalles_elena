@@ -27,6 +27,8 @@ export interface DatosPedido {
   fechaEntrega?: string
   instrucciones?: string
   nota?: string
+  /** casilla de términos y privacidad (consentimiento del DS 1793, art. 56) */
+  aceptaCondiciones: boolean
   items: ItemFormulario[]
 }
 
@@ -49,6 +51,12 @@ export async function crearPedido(datos: DatosPedido): Promise<ResultadoPedido> 
   }
   if (telefono.length < 7 || telefono.length > 15) {
     return { ok: false, mensaje: 'Revisá tu número de WhatsApp.' }
+  }
+  if (datos.aceptaCondiciones !== true) {
+    return {
+      ok: false,
+      mensaje: 'Para confirmar, aceptá los términos y la política de privacidad.',
+    }
   }
   if (!Array.isArray(datos.items) || datos.items.length === 0) {
     return { ok: false, mensaje: 'Tu pedido está vacío.' }
