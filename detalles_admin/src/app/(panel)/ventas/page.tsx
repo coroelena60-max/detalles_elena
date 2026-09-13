@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Encabezado from '@/components/Encabezado'
+import { BOTON } from '@/components/ui'
 import { ESTADOS, ESTADO_PAGO, type EstadoPedido } from '@/lib/estados'
 import { bs, haceCuanto } from '@/lib/formato'
 import { exigirPermiso } from '@/lib/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 
-export const metadata: Metadata = { title: 'Pedidos' }
+export const metadata: Metadata = { title: 'Ventas' }
 export const dynamic = 'force-dynamic'
 
 const FILTROS = [
@@ -27,7 +29,7 @@ export default async function PaginaPedidos({
 }: {
   searchParams: Promise<{ filtro?: string; q?: string }>
 }) {
-  await exigirPermiso('venta.ver')
+  const sesion = await exigirPermiso('venta.ver')
   const { filtro = 'pendientes', q } = await searchParams
   const sb = await clienteServidor()
 
@@ -54,13 +56,12 @@ export default async function PaginaPedidos({
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Pedidos</h1>
-          <p className="mt-1 text-sm text-tinta-suave">
-            Los que entran por el catálogo aparecen acá apenas el cliente confirma.
-          </p>
-        </div>
+      <Encabezado
+        titulo="Ventas"
+        descripcion="Los pedidos del catálogo aparecen acá apenas el cliente confirma; las ventas de mostrador se cargan a mano."
+        modulo="venta"
+        permisos={sesion.permisos}
+      >
         <form className="flex gap-2">
           <input type="hidden" name="filtro" value={filtro} />
           <input
@@ -77,7 +78,12 @@ export default async function PaginaPedidos({
             Buscar
           </button>
         </form>
-      </div>
+        {sesion.permisos.has('venta.editar') && (
+          <Link href="/ventas/nueva" className={BOTON}>
+            Nueva venta
+          </Link>
+        )}
+      </Encabezado>
 
       <nav className="mt-4 flex gap-1 overflow-x-auto pb-1">
         {FILTROS.map((f) => (

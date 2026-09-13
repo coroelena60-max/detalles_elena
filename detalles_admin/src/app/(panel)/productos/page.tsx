@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
+import Encabezado from '@/components/Encabezado'
 import { bs, numero } from '@/lib/formato'
 import type { Database } from '@/types/database'
 import { exigirPermiso } from '@/lib/sesion'
@@ -49,14 +50,12 @@ export default async function PaginaProductos({
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Productos</h1>
-          <p className="mt-1 text-sm text-tinta-suave">
-            Los ramos que ve el cliente en el catálogo. El precio lo decidís vos; el
-            costo lo calcula la base con las recetas.
-          </p>
-        </div>
+      <Encabezado
+        titulo="Productos"
+        descripcion="Los ramos que ve el cliente en el catálogo. El precio lo decidís vos; el costo lo calcula la base con las recetas."
+        modulo="maestro"
+        permisos={sesion.permisos}
+      >
         {puedeEditar && (
           <Link
             href="/productos/nuevo"
@@ -65,7 +64,7 @@ export default async function PaginaProductos({
             Nuevo producto
           </Link>
         )}
-      </div>
+      </Encabezado>
 
       <nav className="mt-4 flex gap-1 overflow-x-auto pb-1">
         {filtros.map((f) => (

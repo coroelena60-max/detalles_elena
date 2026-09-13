@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import type { EstadoPedido, MetodoPago } from '@/lib/estados'
+import { traducirError } from '@/lib/acciones'
 import { clienteServidor } from '@/lib/supabase/servidor'
 
 export type Resultado = { ok: boolean; mensaje: string }
@@ -63,4 +64,70 @@ export async function registrarPago(
   revalidatePath('/ventas')
   revalidatePath('/')
   return { ok: true, mensaje: 'Pago registrado.' }
+}
+
+// ---------------------------------------------------------------------------
+// Venta de mostrador: misma función de la base que el catálogo (los precios
+// los pone la base), pero nace confirmada y con canal "mostrador".
+// ---------------------------------------------------------------------------
+
+export interface LineaMostrador {
+  tipo: 'producto' | 'extra'
+  id: number
+  cantidad: number
+  dedicatoria?: string
+}
+
+export async function crearVentaMostrador(
+  cliente: { nombre: string; telefono: string; email: string },
+  lineas: LineaMostrador[],
+  nota: string,
+): Promise<Resultado & { codigo?: string }> {
+  if (cliente.nombre.trim().length < 2) return { ok: false, mensaje: 'Escribí el nombre del cliente.' }
+  const telefono = cliente.telefono.replace(/\D/g, '')
+  if (telefono.length < 7 || telefono.length > 15) {
+    return { ok: false, mensaje: 'El teléfono tiene que tener entre 7 y 15 dígitos.' }
+  }
+  const items = lineas
+    .filter((l) => l.cantidad > 0)
+    .map((l) =>
+      l.tipo === 'producto'
+        ? { tipo: 'producto', producto_id: l.id, cantidad: l.cantidad, dedicatoria: l.dedicatoria?.trim() || undefined }
+        : { tipo: 'extra', extra_id: l.id, cantidad: l.cantidad },
+    )
+  if (items.length === 0) return { ok: false, mensaje: 'Agregá al menos un producto o extra.' }
+
+  const sb = await clienteServidor()
+  const { data, error } = await sb.rpc('crear_venta_mostrador', {
+    p_cliente: { nombre: cliente.nombre.trim(), telefono, email: cliente.email.trim() || undefined },
+    p_items: items,
+    p_nota: nota.trim() || undefined,
+  })
+  if (error) return { ok: false, mensaje: traducirError(error.message) }
+
+  const codigo = (data as { codigo?: string } | null)?.codigo
+  revalidatePath('/ventas')
+  revalidatePath('/')
+  return { ok: true, codigo, mensaje: `Venta ${codigo ?? ''} registrada.` }
+}
+
+// ---------------------------------------------------------------------------
+// Clientes
+// ---------------------------------------------------------------------------
+
+export async function guardarCliente(
+  id: number,
+  d: { nombre: string; telefono: string; email: string; notas: string },
+): Promise<Resultado> {
+  if (d.nombre.trim().length < 2) return { ok: false, mensaje: 'El nombre es muy corto.' }
+  const telefono = d.telefono.replace(/\D/g, '')
+  const sb = await clienteServidor()
+  const { error } = await sb
+    .from('cliente')
+    .update({ nombre: d.nombre.trim(), telefono, email: d.email.trim() || null, notas: d.notas.trim() || null })
+    .eq('id', id)
+  if (error) return { ok: false, mensaje: traducirError(error.message) }
+  revalidatePath('/ventas/clientes')
+  revalidatePath(`/ventas/clientes/${id}`)
+  return { ok: true, mensaje: 'Cliente actualizado.' }
 }

@@ -67,3 +67,46 @@ export const ESTADO_PAGO: Record<string, { etiqueta: string; clase: string }> = 
   parcial: { etiqueta: 'Cobro parcial', clase: 'bg-aviso-suave text-aviso' },
   pagado: { etiqueta: 'Pagado', clase: 'bg-ok-suave text-ok' },
 }
+
+export type EstadoCompra = Database['public']['Enums']['estado_compra']
+export type UnidadMedida = Database['public']['Enums']['unidad_medida']
+export type TipoMovimiento = Database['public']['Enums']['tipo_movimiento']
+export type EstadoPublicacion = Database['public']['Enums']['estado_publicacion']
+
+export const ESTADOS_COMPRA: Record<EstadoCompra, { etiqueta: string; clase: string }> = {
+  borrador: { etiqueta: 'Borrador', clase: 'bg-aviso-suave text-aviso' },
+  recibida: { etiqueta: 'Recibida', clase: 'bg-ok-suave text-ok' },
+  anulada: { etiqueta: 'Anulada', clase: 'bg-alerta-suave text-alerta' },
+}
+
+export const UNIDADES: Record<UnidadMedida, string> = {
+  unidad: 'unidad',
+  par: 'par',
+  paquete: 'paquete',
+  pliego: 'pliego',
+  rollo: 'rollo',
+  metro: 'metro',
+  centimetro: 'cm',
+  gramo: 'g',
+  kilogramo: 'kg',
+  litro: 'litro',
+  mililitro: 'ml',
+}
+
+export const TIPOS_MOVIMIENTO: Record<TipoMovimiento, { etiqueta: string; clase: string }> = {
+  compra: { etiqueta: 'Compra', clase: 'bg-ok-suave text-ok' },
+  produccion: { etiqueta: 'Producción', clase: 'bg-ok-suave text-ok' },
+  devolucion: { etiqueta: 'Devolución', clase: 'bg-ok-suave text-ok' },
+  ajuste: { etiqueta: 'Ajuste', clase: 'bg-aviso-suave text-aviso' },
+  consumo: { etiqueta: 'Consumo', clase: 'bg-rosa-100 text-rosa-700' },
+  venta: { etiqueta: 'Venta', clase: 'bg-rosa-100 text-rosa-700' },
+  merma: { etiqueta: 'Merma', clase: 'bg-alerta-suave text-alerta' },
+}
+
+export const ESTADOS_PUBLICACION: Record<EstadoPublicacion, { etiqueta: string; clase: string }> = {
+  borrador: { etiqueta: 'Borrador', clase: 'bg-rosa-100 text-rosa-700' },
+  activo: { etiqueta: 'En el catálogo', clase: 'bg-ok-suave text-ok' },
+  agotado: { etiqueta: 'Agotado', clase: 'bg-aviso-suave text-aviso' },
+  temporada: { etiqueta: 'De temporada', clase: 'bg-ok-suave text-ok' },
+  inactivo: { etiqueta: 'Fuera del catálogo', clase: 'bg-alerta-suave text-alerta' },
+}

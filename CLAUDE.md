@@ -15,7 +15,7 @@ Dos aplicaciones independientes sobre una sola base de datos Supabase.
 | Carpeta | Qué es | Puerto dev | Estado |
 |---|---|---|---|
 | `catalogo_web/` | Catálogo público. El cliente elige productos, arma el carrito, confirma y se crea el pedido en BD. El código del pedido se manda al WhatsApp de la tienda y la venta se cierra ahí. | 3000 | **EN CURSO** |
-| `detalles_admin/` | Panel administrativo de la tienda. | 3001 | **EN CURSO** — login, tablero y módulo de pedidos construidos |
+| `detalles_admin/` | Panel administrativo de la tienda. | 3001 | **Todos los módulos construidos**, falta probarlos con datos reales |
 | `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | Escritas y probadas; falta aplicarlas en el proyecto real |
 | `assets/catalogo/` | 33 fotos optimizadas a WebP, listas para subir al bucket `catalogo`. | — | Listas |
 
@@ -132,11 +132,12 @@ Fuente de verdad: `supabase/migrations/`. Probadas contra Postgres 16 local
 | `0018_endurecer_privilegios.sql` | quita `TRUNCATE`/`TRIGGER`/`REFERENCES` heredados de `anon` y `authenticated` |
 | `0019_usuarios_panel.sql` | `v_usuario_admin`, `v_rol_admin`, `cantidad_admins()` y los candados para no quedarse sin ningún administrador |
 | `0020_superadmin.sql` | rol `superadmin` con acceso total; el rol y las cuentas que lo tienen quedan **invisibles** para todos los demás |
+| `0021_contabilidad_reportes_y_candados.sql` | candado de permiso en todas las RPC del panel, `gasto` + `categoria_gasto`, `anular_compra()`/`anular_gasto()`, reportes por rango (`reporte_ventas`, `reporte_compras`, `reporte_ventas_confirmadas`, `reporte_ganancias`, `reporte_bitacora`), vistas `v_kardex` y `v_cliente_resumen`, bitácora sin cambios vacíos |
 
 ### Cómo aplicarlas
 
 Supabase → SQL Editor → pegar `supabase/APLICAR_TODO.sql` → Run.
-(Es la concatenación de las 20 en orden. Si se agrega una migración, regenerarlo.)
+(Es la concatenación de las 21 en orden. Si se agrega una migración, regenerarlo.)
 
 Storage: crear/usar el bucket `catalogo` y subir `assets/catalogo/` manteniendo las
 subcarpetas `productos/`, `extras/`, `marca/`. Recién después correr `0009`.
@@ -200,7 +201,8 @@ Una sola base para las dos apps. Cada módulo del diagrama tiene su lugar:
 | Maestro | las del catálogo + recetas (`extra_insumo`, `envoltorio_insumo`, `producto_insumo`) | `v_costo_extra`, `v_costo_envoltorio`, `v_costo_producto`, `v_margen_producto` |
 | Compra | `proveedor`, `insumo`, `compra`, `compra_item` | `recibir_compra()`, `recalcular_compra()` |
 | Venta | `pedido` (+ `descuento`, `atendido_por`, `entregado_at`, `nota_interna`), `pago`, `cliente` | `registrar_pago()`, `cambiar_estado_pedido()`, `crear_venta_mostrador()`, `recalcular_pedido()`, `v_pedido_saldo` |
-| Reporte | — | `v_reporte_ventas_dia/_mes`, `v_reporte_producto_vendido`, `v_reporte_extra_vendido`, `v_reporte_compras_mes`, `v_reporte_consumo_insumo`, `v_tablero_admin` |
+| Contabilidad | `gasto`, `categoria_gasto` | `anular_gasto()`, `reporte_ventas_confirmadas()`, `reporte_ganancias()` |
+| Reporte | — | `reporte_ventas()`, `reporte_compras()`, `reporte_bitacora()` (por rango de fechas) y las vistas `v_reporte_*`, `v_tablero_admin` |
 
 Decisiones que conviene no re-discutir:
 
@@ -366,38 +368,51 @@ Reglas del panel:
   son políticas RLS, así que la sesión de un admin no las ve ni consultando a mano.
   Como el admin igual tiene los 21 permisos, la diferencia práctica entre los dos roles
   es exactamente esa visibilidad.
+- **Toda RPC del panel empieza con `perform public.exigir_permiso('...')`.** Las funciones
+  son `security definer` y eso se saltea RLS: sin el candado, cualquier cuenta con sesión
+  podía cobrar, entregar pedidos o mover stock (pasó hasta la 0021). Si se escribe una
+  función nueva que escribe datos, lleva su `exigir_permiso` en la primera línea.
+- **Gasto ≠ compra.** Una compra trae insumos que entran al inventario; un gasto es plata
+  que sale y no vuelve como mercadería (alquiler, luz, delivery, publicidad). Un gasto no
+  se edita ni se borra (grant revocado): se anula con motivo.
+- **Ganancia = ventas confirmadas − compras recibidas − gastos**, por fecha de calendario
+  de Bolivia. "Venta confirmada" = estado `confirmado`, `en_produccion`, `listo` o
+  `entregado` (`estados_venta_confirmada()`). Es caja simple: no descuenta el stock que
+  sobró. Si se cambia la definición, se cambia en esas funciones, no en la pantalla.
+- **Los reportes son RPC con su propio permiso** (`reporte.ver`, `contabilidad.ver`) y
+  devuelven jsonb agregado: quien los ve no necesita permiso sobre cada tabla de abajo.
+- **Un pedido entregado no vuelve atrás** (ya descontó inventario).
 - **Los dos roles de arriba siempre tienen todo**: `definir_permisos_rol()` rechaza a
   `admin` y a `superadmin`, y `sincronizar_permisos_admin()` les reparte los permisos
   que traiga una migración futura.
 
-Módulos construidos:
+Estructura: `src/lib/modulos.ts` es el mapa del panel (calcado del diagrama del dueño).
+De esa lista salen la barra de módulos y las pestañas de cada uno (`<Encabezado modulo=…>`).
+Una pantalla nueva se agrega ahí. Piezas compartidas: `components/ui.tsx` (cifras,
+barras, avisos, clases de botón), `components/FiltroFechas.tsx` (rango en la URL, con
+atajos), `lib/fechas.ts` (fechas de calendario de Bolivia como texto AAAA-MM-DD, nunca
+`new Date('2026-09-01')`), `lib/useAccion.ts` (botón → server action → aviso → refresh) y
+`lib/acciones.ts` (`traducirError`).
 
-- **Login** y shell con navegación filtrada por permiso.
-- **Tablero** (`v_tablero_admin`): pedidos por atender, en curso, vendido hoy y del mes,
-  por cobrar, alertas de stock y productos a pérdida, más los últimos 6 pedidos.
-- **Pedidos**: lista con filtros por estado y búsqueda por código; detalle con líneas,
-  extras de cada línea, dedicatoria, datos de entrega y cobros; botón que avanza al
-  siguiente estado (al entregar descuenta inventario) y alta de pagos con saldo en vivo.
-- **Productos (maestro CRUD)**: lista con foto, precio, costo y margen; alta y edición
-  (el código y el slug los pone la base); subida y borrado de fotos directo al bucket
-  `catalogo` con marcado de principal; y la composición del ramo (`producto_extra`) con
-  el control de espacios contra la capacidad del envoltorio. Un producto no se borra:
-  se pasa a `inactivo`, porque los pedidos viejos lo referencian.
+Módulos construidos (todos los del diagrama):
 
-- **Administración** (`/usuarios`), con las cuatro solapas del diagrama:
-  *Usuarios* (lista y ficha de cada persona, con sus roles y lo que esos roles le
-  habilitan), *Roles* (matriz de permisos por módulo, alta y baja de roles propios),
-  *Permisos* (el catálogo fijo, de consulta: qué llaves existen y qué rol tiene cada
-  una) y *Bitácora* (los últimos 100 movimientos, filtrables por entidad).
+| Módulo | Rutas |
+|---|---|
+| Administración | `/usuarios` (usuarios), `/usuarios/roles`, `/usuarios/permisos`, `/usuarios/bitacora` (reporte por fechas + usuario + entidad) |
+| Inventario | `/inventario` (stock de productos), `/inventario/extras` (con "producir" que descuenta la receta), `/inventario/movimientos` (kardex) |
+| Productos (maestro) | `/productos` (CRUD, fotos, composición), `/productos/personalizado` (extras con receta y foto, envoltorios, `/cotizador`), `/productos/categorias` |
+| Compras | `/compras` (borrador → insumos → recibir/anular), `/compras/insumos`, `/compras/proveedores` |
+| Ventas | `/ventas` (pedidos; antes `/pedidos`), `/ventas/nueva` (mostrador), `/ventas/clientes` |
+| Contabilidad | `/contabilidad` (gastos), `/contabilidad/ventas` (confirmadas), `/contabilidad/ganancias` |
+| Reportes | `/reportes` (ventas), `/reportes/compras` |
 
-El orden de la navegación sigue el diagrama del dueño: tablero · administración ·
-inventario · productos (el "maestro" del diagrama, que se muestra con su nombre de
-siempre) · compras · ventas · reportes.
-
-Faltan: inventario, compras y reportes — la navegación ya los muestra según permiso
-pero las rutas todavía no existen. **Contabilidad** está en el diagrama pero sin nada
-adentro, así que no se le puso enlace: un link a una pantalla vacía es peor que no
-tenerlo.
+Detalles de UX que son decisiones, no descuidos:
+- Mover stock no pide "cantidades con signo": se elige *Entrada*, *Conté* (se escribe lo
+  que hay y el sistema ajusta la diferencia), *Merma* o *Devolución*.
+- Los componentes de cliente no reciben funciones desde el servidor (no se serializan):
+  se pasan prefijos de ruta o server actions con `.bind`.
+- Las fotos que sube el panel a `catalogo/extras/` llevan prefijo `panel-`; solo esas se
+  borran del bucket al reemplazarlas (las del seed no se tocan).
 
 ## 6. Contexto de negocio que cambia decisiones
 
@@ -481,6 +496,14 @@ Hecho (último corte: 2026-09-12):
       real como usuario autenticado (crear rol → permisos → asignar → quitar → borrar)
       y los candados verificados: auto-quitarse el admin, auto-desactivarse, recortar
       al rol admin e inventar un permiso.
+- [x] **Contabilidad, reportes y candados de RPC** (0021) y **todos los módulos del
+      panel** construidos. Circuito de negocio probado contra la base real y revertido:
+      compra 20 pliegos × Bs 1,50 → recibir → receta de la rosa (Bs 2,75) → producir 10
+      (descuenta 5 pliegos) → conteo corrige −2 → venta de mostrador 3 rosas Bs 12 →
+      cobro QR → entrega baja el stock → gasto Bs 7 → ganancia del día −25 exacto. Las 11
+      RPC rechazan a una cuenta sin rol (42501). `build` con 36 rutas en limpio.
+      Ojo: un test revertido igual consume ids; después de probar se re-sincronizan los
+      contadores con `setval(..., max(id))` para que PED/COM/GAS no salten códigos.
 - [x] **Superadmin probado de punta a punta** (0020): con una cuenta admin temporal y
       sesión real se comprobó que el rol `superadmin` y la cuenta que lo tiene no
       aparecen ni en las vistas ni en las tablas crudas ni en la matriz de permisos,
@@ -497,7 +520,8 @@ Pendiente, en orden:
    costeo deje de contar solo la mano de obra.
 4. Seguir el panel admin por módulos. Hecho: login + tablero + ventas + productos +
    administración (usuarios, roles, permisos, bitácora).
-   Sigue: **compras e inventario** → reportes → definir qué va en contabilidad.
+   **Hecho: todos los módulos del diagrama.** Sigue: probarlos con datos reales
+   (cargar insumos, proveedores y recetas) y ajustar lo que la dueña encuentre.
    Para sumar a Elena: crear su cuenta en Supabase (Authentication → Add user) y darle
    el rol desde `/usuarios`; el SQL Editor ya no hace falta.
 5. Tipos de la BD: `catalogo_web/src/types/database.ts` sigue escrito a mano y
