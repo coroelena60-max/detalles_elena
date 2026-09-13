@@ -3,11 +3,14 @@
 Una sola base para las dos apps: el catálogo web (anónimo) y el panel admin
 (autenticado). Fuente de verdad del esquema. No editar tablas a mano en el dashboard.
 
-## Aplicar todo
-Supabase → SQL Editor → pegar `APLICAR_TODO.sql` → Run. Es idempotente.
+## Aplicar
+- **Base real** (`nrwamzgxwttgvaqqodfp`, ya tiene las 24): se aplica **solo la migración
+  nueva**. Supabase → SQL Editor → pegar ese único archivo → Run. Nunca todas juntas.
+- **Proyecto vacío o prueba local**: `node supabase/generar-base-nueva.mjs` arma
+  `base-nueva.sql` (no se versiona). Si la base ya tiene tablas, se frena solo sin tocar nada.
 
-Trae las 24 migraciones (0001–0024). Qué está aplicado en el proyecto real
-(`nrwamzgxwttgvaqqodfp`) se lleva en `../CLAUDE.md` §8.
+`APLICAR_TODO.sql` se eliminó el 2026-09-13: correrlo entero sobre la base real pisó
+precios y fotos editados en el panel (ver `../CLAUDE.md` §4).
 
 ## Fotos
 1. Storage → bucket `catalogo` (lo crea la migración 0006).
@@ -47,7 +50,7 @@ un permiso concreto (`public.tiene_permiso('venta.editar')`).
 ## Agregar una migración
 1. Crear `migrations/NNNN_descripcion.sql` (idempotente).
 2. Probarla antes de aplicarla en el proyecto real.
-3. Regenerar `APLICAR_TODO.sql` concatenando las migraciones en orden.
+3. Aplicarla sola en la base real (SQL Editor → ese archivo → Run).
 
 ## Reglas que no se rompen
 - `anon` solo puede **leer** el catálogo publicado y ejecutar `crear_pedido()` y
@@ -57,5 +60,7 @@ un permiso concreto (`public.tiene_permiso('venta.editar')`).
   `movimiento_inventario`.
 - El catálogo de `permiso` es fijo: se cambia por migración, nunca desde el panel.
   El panel gestiona roles y qué permisos tiene cada rol.
-- Toda migración tiene que poder re-ejecutarse. Si agregás un trigger, probá que
-  `APLICAR_TODO.sql` completo siga pasando sobre una base ya aplicada.
+- Toda migración tiene que poder re-ejecutarse sin error. Si agregás un trigger, probá
+  la base completa en local (`generar-base-nueva.mjs`) antes de aplicarla.
+- Los seeds son **solo carga inicial**: insertan si la tabla está vacía y nunca pisan
+  lo que la dueña edita desde el panel (precios, nombres, estados, fotos).

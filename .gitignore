@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # temporales de la CLI de Supabase
 **/supabase/.temp/
+
+# base nueva generada a pedido: nunca al repo ni a la base real
+supabase/base-nueva.sql

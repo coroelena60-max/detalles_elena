@@ -2,33 +2,44 @@
 -- Detalles Elena · 0007 · Carga inicial del catálogo (idempotente)
 --   Datos tomados de PRECIOS.docx y de los nombres/precios de las fotos.
 --   Precios en Bs. Los espacios vienen del análisis v3 (modelo de mochila).
+--
+--   SOLO CARGA INICIAL: cada bloque inserta únicamente si su tabla está vacía.
+--   Una vez que hay datos, los maneja la dueña desde el panel y re-ejecutar
+--   este archivo no puede pisarlos. (Antes cada bloque era "on conflict do
+--   update": el 2026-09-13 una re-ejecución devolvió precios viejos.)
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------
 -- Categorías
 -- ---------------------------------------------------------------------------
-insert into public.categoria (nombre, slug, descripcion, orden, activa) values
+insert into public.categoria (nombre, slug, descripcion, orden, activa)
+select * from (values
   ('Ramos cono',        'ramos-cono',        'Ramos armados en envoltorio cono, de chico a súper jumbo.', 1, true),
   ('Ramos abanico',     'ramos-abanico',     'Ramos armados en envoltorio abanico, de extra chico a súper jumbo.', 2, true),
   ('Carteras',          'carteras',          'Carteras de regalo con flores hechas a mano.', 3, true),
   ('Cajas y corazones', 'cajas-y-corazones', 'Cajas decoradas y cajas corazón con flores y chocolates.', 4, true)
-on conflict (slug) do update
-  set nombre = excluded.nombre, descripcion = excluded.descripcion, orden = excluded.orden;
+) as v(nombre, slug, descripcion, orden, activa)
+where not exists (select 1 from public.categoria)
+on conflict (slug) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Estilos de envoltorio
 -- ---------------------------------------------------------------------------
-insert into public.estilo (nombre, slug, descripcion, orden, activo) values
+insert into public.estilo (nombre, slug, descripcion, orden, activo)
+select * from (values
   ('Cono',         'cono',         'Envoltorio cónico de papel coreano.', 1, true),
   ('Abanico',      'abanico',      'Envoltorio abierto en abanico.',      2, true),
   ('Cartera',      'cartera',      'Caja tipo cartera con asa.',          3, true),
   ('Caja corazón', 'caja-corazon', 'Caja en forma de corazón.',           4, true)
-on conflict (slug) do update set nombre = excluded.nombre, orden = excluded.orden;
+) as v(nombre, slug, descripcion, orden, activo)
+where not exists (select 1 from public.estilo)
+on conflict (slug) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Tamaños
 -- ---------------------------------------------------------------------------
-insert into public.tamano (codigo, nombre, orden, activo) values
+insert into public.tamano (codigo, nombre, orden, activo)
+select * from (values
   ('XS',   'Extra chico', 1, true),
   ('S',    'Chico',       2, true),
   ('M',    'Mediano',     3, true),
@@ -37,7 +48,9 @@ insert into public.tamano (codigo, nombre, orden, activo) values
   ('XXL',  'Súper jumbo', 6, true),
   ('XXXL', 'Mega jumbo',  7, true),
   ('U',    'Único',       8, true)
-on conflict (codigo) do update set nombre = excluded.nombre, orden = excluded.orden;
+) as v(codigo, nombre, orden, activo)
+where not exists (select 1 from public.tamano)
+on conflict (codigo) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Envoltorios (precio base + capacidad en espacios)
@@ -64,19 +77,22 @@ select e.id, t.id, d.precio_base, d.espacios, true
 from datos d
 join public.estilo e on e.slug   = d.estilo_slug
 join public.tamano t on t.codigo = d.tamano_codigo
-on conflict (estilo_id, tamano_id) do update
-  set precio_base = excluded.precio_base, espacios = excluded.espacios;
+where not exists (select 1 from public.envoltorio)
+on conflict (estilo_id, tamano_id) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Categorías de extras
 -- ---------------------------------------------------------------------------
-insert into public.extra_categoria (nombre, slug, orden, activa) values
+insert into public.extra_categoria (nombre, slug, orden, activa)
+select * from (values
   ('Flores',     'flores',     1, true),
   ('Follaje',    'follaje',    2, true),
   ('Accesorios', 'accesorios', 3, true),
   ('Juguetes',   'juguetes',   4, true),
   ('Peluches',   'peluches',   5, true)
-on conflict (slug) do update set nombre = excluded.nombre, orden = excluded.orden;
+) as v(nombre, slug, orden, activa)
+where not exists (select 1 from public.extra_categoria)
+on conflict (slug) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Extras (precio de venta actual · espacios = volumen que ocupa)
@@ -108,18 +124,17 @@ select ec.id, d.nombre, public.slugify(d.nombre), d.descripcion,
        d.precio, d.espacios, d.estado::estado_publicacion, d.orden
 from datos d
 join public.extra_categoria ec on ec.slug = d.cat_slug
-on conflict (nombre) do update
-  set precio      = excluded.precio,
-      espacios    = excluded.espacios,
-      descripcion = excluded.descripcion,
-      orden       = excluded.orden,
-      extra_categoria_id = excluded.extra_categoria_id;
+where not exists (select 1 from public.extra)
+on conflict (nombre) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Zonas de envío (el costo final se cotiza por WhatsApp)
 -- ---------------------------------------------------------------------------
-insert into public.zona_envio (nombre, costo_referencia, activa) values
-  ('Cotoca',               null, true),
-  ('Santa Cruz de la Sierra', null, true),
-  ('Otra zona',            null, true)
+insert into public.zona_envio (nombre, costo_referencia, activa)
+select * from (values
+  ('Cotoca',                  null::numeric, true),
+  ('Santa Cruz de la Sierra', null::numeric, true),
+  ('Otra zona',               null::numeric, true)
+) as v(nombre, costo_referencia, activa)
+where not exists (select 1 from public.zona_envio)
 on conflict (nombre) do nothing;

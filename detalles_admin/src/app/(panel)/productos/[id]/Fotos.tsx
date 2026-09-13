@@ -83,7 +83,7 @@ export default function Fotos({
 
   function borrar(foto: Foto) {
     iniciar(async () => {
-      const r = await borrarFoto(productoId, foto.id, foto.storage_path)
+      const r = await borrarFoto(productoId, foto.id)
       setAviso({ ok: r.ok, texto: r.mensaje })
       if (r.ok) router.refresh()
     })

@@ -4,6 +4,12 @@
 --   del Storage de Supabase, manteniendo las subcarpetas productos/ extras/ marca/.
 --   Los nombres de archivo son el código del producto en minúscula (ab-s-001.webp)
 --   o el slug del extra (girasol.webp).
+--
+--   SOLO CARGA INICIAL: las fotos de producto se insertan únicamente si la tabla
+--   está vacía, y las de extras solo si ningún extra tiene foto todavía. Antes,
+--   re-ejecutar resucitaba como PRINCIPAL fotos que la dueña había borrado desde
+--   el panel (y del bucket): quedaban rotas y la foto nueva perdía la marca
+--   (pasó el 2026-09-13).
 -- =============================================================================
 
 -- para poder re-ejecutar sin duplicar
@@ -43,8 +49,10 @@ select p.id, d.archivo, b.url || d.archivo, p.nombre, d.orden, d.es_principal
 from datos d
 cross join base b
 join public.producto p on p.codigo = d.producto_codigo
-on conflict (producto_id, storage_path) do update
-  set url = excluded.url, alt = excluded.alt, orden = excluded.orden;
+-- en el WHERE: el trigger BEFORE de foto principal (0017) desmarcaría la foto
+-- principal actual aunque la fila después chocara con el ON CONFLICT
+where not exists (select 1 from public.producto_imagen)
+on conflict (producto_id, storage_path) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Imágenes de extras
@@ -68,4 +76,5 @@ from (values
     ('Tarjeta',               'tarjeta.webp'),
     ('Hot Wheels',            'hot-wheels.webp')
 ) as d(nombre, archivo)
-where e.nombre = d.nombre;
+where e.nombre = d.nombre
+  and not exists (select 1 from public.extra x where x.imagen_url is not null);

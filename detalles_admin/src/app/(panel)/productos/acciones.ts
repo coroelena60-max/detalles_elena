@@ -148,19 +148,20 @@ export async function registrarFoto(
 ): Promise<Resultado> {
   const sb = await clienteServidor()
 
-  const { count } = await sb
+  const { data: actuales } = await sb
     .from('producto_imagen')
-    .select('id', { count: 'exact', head: true })
+    .select('orden, es_principal')
     .eq('producto_id', productoId)
+  const lista = actuales ?? []
 
   const { error } = await sb.from('producto_imagen').insert({
     producto_id: productoId,
     storage_path: storagePath,
     url,
     alt: alt.trim() || null,
-    orden: (count ?? 0) + 1,
-    // la primera foto que se sube queda como principal
-    es_principal: (count ?? 0) === 0,
+    orden: Math.max(0, ...lista.map((f) => f.orden)) + 1,
+    // si el producto no tiene foto principal, la nueva pasa a serlo
+    es_principal: !lista.some((f) => f.es_principal),
   })
 
   if (error) return { ok: false, mensaje: error.message }
@@ -175,11 +176,17 @@ export async function marcarFotoPrincipal(
 ): Promise<Resultado> {
   const sb = await clienteServidor()
   // el trigger de la 0017 desmarca sola la anterior
-  const { error } = await sb
+  const { data, error } = await sb
     .from('producto_imagen')
     .update({ es_principal: true })
     .eq('id', imagenId)
+    .eq('producto_id', productoId)
+    .select('id')
   if (error) return { ok: false, mensaje: error.message }
+  // RLS no da error: si no tiene permiso simplemente no actualiza ninguna fila
+  if (!data?.length) {
+    return { ok: false, mensaje: 'No se pudo cambiar la foto principal (¿ya no existe o falta permiso?).' }
+  }
   revalidatePath(`/productos/${productoId}`)
   revalidatePath('/productos')
   return { ok: true, id: productoId, mensaje: 'Foto principal cambiada.' }
@@ -188,19 +195,52 @@ export async function marcarFotoPrincipal(
 export async function borrarFoto(
   productoId: number,
   imagenId: number,
-  storagePath: string | null,
 ): Promise<Resultado> {
   const sb = await clienteServidor()
 
-  const { error } = await sb.from('producto_imagen').delete().eq('id', imagenId)
+  // la ruta del archivo sale de la fila borrada, no del navegador: así no se
+  // puede borrar del bucket un archivo que no sea de esta foto
+  const { data: borradas, error } = await sb
+    .from('producto_imagen')
+    .delete()
+    .eq('id', imagenId)
+    .eq('producto_id', productoId)
+    .select('storage_path, es_principal')
   if (error) return { ok: false, mensaje: error.message }
+  const borrada = borradas?.[0]
+  if (!borrada) {
+    return { ok: false, mensaje: 'No se pudo borrar la foto (¿ya no existe o falta permiso?).' }
+  }
 
-  // si la fila tenía archivo propio, se borra también del bucket
-  if (storagePath) {
-    await sb.storage.from('catalogo').remove([storagePath])
+  // si era la principal, la siguiente en orden toma su lugar
+  if (borrada.es_principal) {
+    const { data: siguiente } = await sb
+      .from('producto_imagen')
+      .select('id')
+      .eq('producto_id', productoId)
+      .order('orden')
+      .order('id')
+      .limit(1)
+      .maybeSingle()
+    if (siguiente) {
+      await sb.from('producto_imagen').update({ es_principal: true }).eq('id', siguiente.id)
+    }
   }
 
   revalidatePath(`/productos/${productoId}`)
   revalidatePath('/productos')
+
+  if (borrada.storage_path) {
+    const { error: errorBucket } = await sb.storage
+      .from('catalogo')
+      .remove([borrada.storage_path])
+    if (errorBucket) {
+      return {
+        ok: false,
+        mensaje: `La foto se quitó del producto, pero el archivo quedó en el almacenamiento: ${errorBucket.message}`,
+      }
+    }
+  }
+
   return { ok: true, id: productoId, mensaje: 'Foto borrada.' }
 }

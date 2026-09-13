@@ -16,7 +16,7 @@ Dos aplicaciones independientes sobre una sola base de datos Supabase.
 |---|---|---|---|
 | `catalogo_web/` | Catálogo público. El cliente elige productos, arma el carrito, confirma y se crea el pedido en BD. El código del pedido se manda al WhatsApp de la tienda y la venta se cierra ahí. | 3000 | **En uso** (entran pedidos reales) |
 | `detalles_admin/` | Panel administrativo de la tienda. | 3001 | **Todos los módulos construidos**, falta probarlos con datos reales |
-| `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | 0001–0024 en `APLICAR_TODO.sql`; ver §8 qué está aplicado |
+| `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | 0001–0024 aplicadas en el proyecto real |
 | `assets/catalogo/` | 33 fotos optimizadas a WebP, ya subidas al bucket `catalogo`. | — | Subidas |
 
 El catálogo y todos los módulos del panel (según el diagrama del dueño: administración,
@@ -30,8 +30,10 @@ inventario, maestro, compra, venta y reportes) están construidos. Lo que sigue 
    `packageManager: pnpm@12.4.1` en su `package.json`.
 2. **La base de datos se cambia solo por migración.** Nada de editar tablas a mano en
    el dashboard: se crea un archivo nuevo en `supabase/migrations/NNNN_descripcion.sql`,
-   se prueba, y se regenera `supabase/APLICAR_TODO.sql`. Las migraciones son
-   **idempotentes** (se pueden volver a ejecutar sin romper nada).
+   se prueba y se aplica **sola** en la base real. Las migraciones son
+   **idempotentes** (se pueden volver a ejecutar sin romper nada). Los **seeds son solo
+   carga inicial**: insertan si la tabla está vacía y **nunca** hacen
+   `on conflict do update` sobre datos que se editan en el panel (ver §4).
 3. **La `service_role` key nunca llega al navegador.** Solo en variables de servidor del
    panel admin. El catálogo web usa únicamente la clave publicable (anon).
 4. **Los precios se calculan en el servidor.** El catálogo nunca manda montos: manda
@@ -146,8 +148,30 @@ Fuente de verdad: `supabase/migrations/`. Probadas contra Postgres 16 local
 
 ### Cómo aplicarlas
 
-Supabase → SQL Editor → pegar `supabase/APLICAR_TODO.sql` → Run.
-(Es la concatenación de las 24 en orden. Si se agrega una migración, regenerarlo.)
+**En la base real (`nrwamzgxwttgvaqqodfp`) se aplica SOLO la migración nueva**: Supabase →
+SQL Editor → pegar ese único archivo `supabase/migrations/NNNN_...sql` → Run. Nunca todas
+juntas. Las 24 actuales ya están aplicadas.
+
+`APLICAR_TODO.sql` **ya no existe** (se borró el 2026-09-13). Esa noche una sesión aplicó
+0023 y 0024 corriendo el archivo completo sobre la base real "para verificar que era
+idempotente", y los seeds pisaron precios, `destacado` y fotos que la dueña había cambiado
+(las fotos borradas volvieron como principal y rotas). Quedan tres candados:
+
+1. **Seeds solo de carga inicial** (0007/0008/0009, roles de 0016/0020): cada bloque filtra
+   con `where not exists (select 1 from <tabla>)`. Va en el `WHERE` y no solo en el
+   `ON CONFLICT` porque los triggers BEFORE INSERT (slug de producto, foto principal única)
+   corren igual para las filas que después chocan y desmarcarían la foto principal actual.
+2. **Base nueva a pedido**: `node supabase/generar-base-nueva.mjs` arma
+   `supabase/base-nueva.sql` (en `.gitignore`, no se versiona) para un proyecto de Supabase
+   **vacío** o una prueba local. Empieza con un bloque que corta con `ALTO` si
+   `public.producto` ya existe, así que sobre la base real no toca nada.
+3. Esta regla, escrita acá.
+
+Probado en PGlite (`@electric-sql/pglite` con `pgcrypto` y `unaccent`, más stubs de
+`auth.users`, `auth.uid()`, `storage.buckets/objects` y los roles `anon`, `authenticated`,
+`service_role`): base vacía → los mismos 16 productos, 24 composiciones, 18 extras,
+14 envoltorios y 17 fotos que antes; con ediciones del panel los seeds no cambian ninguna
+fila; y `base-nueva.sql` sobre una base con datos corta en el candado sin tocar nada.
 
 Storage: crear/usar el bucket `catalogo` y subir `assets/catalogo/` manteniendo las
 subcarpetas `productos/`, `extras/`, `marca/`. Recién después correr `0009`.
@@ -249,8 +273,13 @@ Decisiones que conviene no re-discutir:
   bucket `catalogo` con permiso `maestro.editar`.
 - **Ojo con los triggers al re-ejecutar seeds**: el de slug solo desambigua cuando el
   slug se genera desde el nombre, y el de foto principal no toca la fila que un
-  `on conflict` va a actualizar. Sin esas dos salvedades, `APLICAR_TODO.sql` deja de ser
-  idempotente (pasó, y por eso está probado).
+  `on conflict` va a actualizar. Aun así, un seed nuevo sobre `producto` o
+  `producto_imagen` tiene que filtrar en el `WHERE` (ver §4, "Re-ejecutarlo…").
+- **Fotos de producto** (`productos/acciones.ts`): `borrarFoto()` toma la ruta del archivo
+  de la fila borrada (no del navegador), avisa si RLS no borró nada o si el bucket falla, y
+  si era la principal pasa la marca a la siguiente; `registrarFoto()` marca la nueva como
+  principal si el producto no tiene ninguna. Con RLS un `update`/`delete` sin permiso **no
+  da error**: devuelve cero filas, por eso se pide `.select()` y se cuentan.
 - **Venta de mostrador y pedido web son la misma tabla**, se distinguen por `canal`. En el panel son
   dos módulos: **Pedidos** = catálogo web, **Ventas** = lo vendido en la tienda. La ficha es una sola
   (`ventas/[codigo]`, re-exportada en `pedidos/[codigo]`); para enlazar usar `rutaPedido(codigo, canal)`.
@@ -525,8 +554,8 @@ Hecho (último corte: 2026-09-12):
 - [x] **Privilegios heredados cerrados** (0018): `anon` tenía `TRUNCATE` sobre
       `producto`, `pedido` y `cliente` por los defaults de Supabase — y TRUNCATE no
       respeta RLS
-- [x] `APLICAR_TODO.sql` (entonces con 18 migraciones; hoy trae las 24) re-ejecutado entero sobre la base ya
-      aplicada: pasa sin tocar un dato
+- [x] Las migraciones 0001–0018 re-ejecutadas sobre la base ya aplicada: pasaban sin
+      error (pero ver §4: sin datos editados no se veía que los seeds los pisaban)
 - [x] **Panel admin arrancado**: auth con Supabase (login + proxy de sesión), tipos
       generados desde la base, shell con navegación por permiso, tablero, módulo de
       pedidos y módulo de productos (CRUD + fotos + composición). `type-check`, `lint`
@@ -561,7 +590,7 @@ Pendiente, en orden:
 3. **Cargar insumos, proveedores y recetas** desde el panel (o por seed) para que el
    costeo deje de contar solo la mano de obra.
 4. Probar los módulos del panel con datos reales y ajustar lo que la dueña encuentre.
-   Confirmar que 0022–0024 estén aplicadas en el proyecto real (no quedó registrado).
+   Las 24 migraciones están aplicadas en el proyecto real (verificado el 2026-09-13).
    Para sumar a Elena: crear su cuenta en Supabase (Authentication → Add user) y darle
    el rol desde `/usuarios`; el SQL Editor ya no hace falta.
 5. Tipos de la BD: `catalogo_web/src/types/database.ts` sigue escrito a mano y

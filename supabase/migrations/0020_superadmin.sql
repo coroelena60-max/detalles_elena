@@ -20,9 +20,7 @@ insert into public.rol (nombre, slug, descripcion, es_sistema) values
    'Dueño del sistema. Ve todo, incluso los roles y las cuentas que el administrador no ve.',
    true)
 on conflict (slug) do update
-  set nombre = excluded.nombre,
-      descripcion = excluded.descripcion,
-      es_sistema = true;
+  set es_sistema = true;
 
 -- acceso total: todos los permisos que existan
 insert into public.rol_permiso (rol_id, permiso_id)

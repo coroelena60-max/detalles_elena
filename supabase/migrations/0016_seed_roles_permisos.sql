@@ -44,8 +44,8 @@ insert into public.rol (nombre, slug, descripcion, es_sistema) values
   ('Administrador', 'admin',      'Acceso total al panel.', true),
   ('Vendedor',      'vendedor',   'Atiende pedidos, cobra y gestiona clientes.', true),
   ('Producción',    'produccion', 'Arma los pedidos y mueve el inventario del taller.', true)
-on conflict (slug) do update
-  set nombre = excluded.nombre, descripcion = excluded.descripcion;
+-- nombre y descripción se editan desde el panel: re-ejecutar no los pisa
+on conflict (slug) do update set es_sistema = true;
 
 -- admin: todo
 insert into public.rol_permiso (rol_id, permiso_id)

@@ -3,6 +3,13 @@
 --   Nombre y precio salen del nombre de archivo de cada foto.
 --   La composición (cuántas flores lleva) sale del mismo nombre y de PRECIOS.docx.
 --   'descripcion' queda con un texto base para que Elena lo edite en el panel.
+--
+--   SOLO CARGA INICIAL: los productos se insertan únicamente si no hay ninguno, y
+--   la composición si no hay ninguna. Antes era "on conflict do update" y cada
+--   re-ejecución pisaba precio, slug (la URL que circula por TikTok), estado y
+--   destacado editados en el panel, y devolvía extras quitados de un ramo.
+--   El filtro va en el WHERE y no solo en el ON CONFLICT porque el trigger BEFORE
+--   INSERT de producto (0017) corre igual para las filas que después chocan.
 -- =============================================================================
 
 with datos(codigo, nombre, cat_slug, estilo_slug, tamano, precio,
@@ -39,18 +46,8 @@ join public.categoria c  on c.slug = d.cat_slug
 join public.estilo  e    on e.slug = d.estilo_slug
 join public.tamano  t    on t.codigo = d.tamano
 join public.envoltorio env on env.estilo_id = e.id and env.tamano_id = t.id
-on conflict (codigo) do update
-  set nombre         = excluded.nombre,
-      slug           = excluded.slug,
-      descripcion    = excluded.descripcion,
-      precio         = excluded.precio,
-      categoria_id   = excluded.categoria_id,
-      envoltorio_id  = excluded.envoltorio_id,
-      destacado      = excluded.destacado,
-      lead_time_dias = excluded.lead_time_dias,
-      minutos_armado = excluded.minutos_armado,
-      orden          = excluded.orden,
-      estado         = 'activo';
+where not exists (select 1 from public.producto)
+on conflict (codigo) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Composición: qué lleva cada producto
@@ -87,4 +84,5 @@ select p.id, e.id, c.cantidad
 from comp c
 join public.producto p on p.codigo = c.producto_codigo
 join public.extra    e on e.nombre = c.extra_nombre
-on conflict (producto_id, extra_id) do update set cantidad = excluded.cantidad;
+where not exists (select 1 from public.producto_extra)
+on conflict (producto_id, extra_id) do nothing;
