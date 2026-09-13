@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Miniatura from '@/components/Miniatura'
 import { Aviso, BOTON, CAMPO } from '@/components/ui'
 import { bs } from '@/lib/formato'
 import { useAccion } from '@/lib/useAccion'
@@ -13,6 +14,7 @@ export interface Vendible {
   nombre: string
   precio: number
   detalle: string
+  imagen: string | null
 }
 
 export default function VentaMostrador({ vendibles }: { vendibles: Vendible[] }) {
@@ -55,7 +57,8 @@ export default function VentaMostrador({ vendibles }: { vendibles: Vendible[] })
           {encontrados.map((v) => {
             const c = carrito[v.clave]?.cantidad ?? 0
             return (
-              <li key={v.clave} className="flex items-center gap-2 py-2">
+              <li key={v.clave} className="flex items-center gap-3 py-2">
+                <Miniatura url={v.imagen} alt={v.nombre} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm">{v.nombre}</p>
                   <p className="text-xs text-tinta-suave">{bs(v.precio)} · {v.detalle}</p>

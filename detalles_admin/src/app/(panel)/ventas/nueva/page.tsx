@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { fotoPrincipal } from '@/lib/estados'
 import { exigirPermiso } from '@/lib/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import VentaMostrador, { type Vendible } from './VentaMostrador'
@@ -13,8 +14,10 @@ export default async function PaginaNuevaVenta() {
 
   // lo mismo que se puede comprar en el catálogo: publicado y no agotado
   const [{ data: productos }, { data: extras }] = await Promise.all([
-    sb.from('producto').select('id, codigo, nombre, precio').in('estado', ['activo', 'temporada']).order('nombre'),
-    sb.from('extra').select('id, nombre, precio').in('estado', ['activo', 'temporada']).order('nombre'),
+    sb
+      .from('producto')
+      .select('id, codigo, nombre, precio, imagenes:producto_imagen (url, es_principal, orden)').in('estado', ['activo', 'temporada']).order('nombre'),
+    sb.from('extra').select('id, nombre, precio, imagen_url').in('estado', ['activo', 'temporada']).order('nombre'),
   ])
 
   const vendibles: Vendible[] = [
@@ -25,6 +28,7 @@ export default async function PaginaNuevaVenta() {
       nombre: p.nombre,
       precio: Number(p.precio),
       detalle: p.codigo,
+      imagen: fotoPrincipal(p.imagenes),
     })),
     ...(extras ?? []).map((e) => ({
       clave: `e${e.id}`,
@@ -33,6 +37,7 @@ export default async function PaginaNuevaVenta() {
       nombre: e.nombre,
       precio: Number(e.precio),
       detalle: 'extra suelto',
+      imagen: e.imagen_url,
     })),
   ]
 

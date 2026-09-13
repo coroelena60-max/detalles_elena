@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ESTADOS, ESTADO_PAGO, METODOS_PAGO, nombreCliente } from '@/lib/estados'
+import Miniatura from '@/components/Miniatura'
+import { ESTADOS, ESTADO_PAGO, METODOS_PAGO, fotoPrincipal, nombreCliente } from '@/lib/estados'
 import { bs, fechaHora, numero } from '@/lib/formato'
 import { exigirPermiso } from '@/lib/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
@@ -37,7 +38,9 @@ export default async function PaginaPedido({
        entrega (direccion, referencia, destinatario, telefono, fecha_entrega, instrucciones,
                 zona:zona_envio_id (nombre, costo_referencia)),
        items:pedido_item (id, tipo, nombre, precio_unitario, cantidad, subtotal, dedicatoria,
-                          extras:pedido_item_extra (id, nombre, cantidad, subtotal))`,
+                          producto:producto_id (imagenes:producto_imagen (url, es_principal, orden)),
+                          extra:extra_id (imagen_url),
+                          extras:pedido_item_extra (id, nombre, cantidad, subtotal, extra:extra_id (imagen_url)))`,
     )
     .eq('codigo', codigo)
     .maybeSingle()
@@ -106,10 +109,18 @@ export default async function PaginaPedido({
                   nombre: string
                   cantidad: number
                   subtotal: number
+                  extra: { imagen_url: string | null } | null
                 }[]
+                // producto → su foto principal; extra suelto → su foto;
+                // armado personalizado → la del primer extra que tenga foto
+                const foto =
+                  fotoPrincipal(i.producto?.imagenes) ??
+                  i.extra?.imagen_url ??
+                  extras.find((e) => e.extra?.imagen_url)?.extra?.imagen_url
                 return (
                   <li key={i.id} className="py-3 first:pt-0 last:pb-0">
                     <div className="flex items-start gap-3">
+                      <Miniatura url={foto} alt={i.nombre} className="size-16" />
                       <span className="text-sm text-tinta-suave">{i.cantidad}×</span>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium">{i.nombre}</p>

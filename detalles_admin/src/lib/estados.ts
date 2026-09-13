@@ -124,3 +124,13 @@ export function nombreCliente(c: { nombre?: string | null; telefono?: string | n
   if (c.telefono === TELEFONO_SIN_CLIENTE || c.nombre === 'S/N') return 'S/C · Sin cliente'
   return c.nombre ?? 'Sin cliente'
 }
+
+/** La foto que se muestra de un producto: la principal, si no la primera por orden. */
+export function fotoPrincipal(
+  imagenes: { url: string; es_principal: boolean; orden: number }[] | null | undefined,
+): string | null {
+  const orden = [...(imagenes ?? [])].sort(
+    (a, b) => Number(b.es_principal) - Number(a.es_principal) || a.orden - b.orden,
+  )
+  return orden[0]?.url ?? null
+}
