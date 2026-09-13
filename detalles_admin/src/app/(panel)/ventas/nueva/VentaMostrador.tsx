@@ -18,9 +18,16 @@ export interface Vendible {
   imagen: string | null
 }
 
+export interface CotizacionVendible {
+  id: number
+  codigo: string
+  nombre: string
+  precio: number
+}
+
 interface Linea {
   clave: string
-  tipo: 'producto' | 'extra' | 'personalizado'
+  tipo: 'producto' | 'extra' | 'personalizado' | 'cotizacion'
   nombre: string
   precio: number
   imagen: string | null
@@ -33,16 +40,25 @@ export default function VentaMostrador({
   vendibles,
   envoltorios,
   extras,
+  cotizaciones,
+  cotizacionInicial,
 }: {
   vendibles: Vendible[]
   envoltorios: Envoltorio[]
   extras: ExtraArmado[]
+  cotizaciones: CotizacionVendible[]
+  cotizacionInicial: number | null
 }) {
   const { pendiente, aviso, ejecutar, router } = useAccion()
   const [cliente, setCliente] = useState({ nombre: '', telefono: '', email: '' })
   const [sinCliente, setSinCliente] = useState(false)
   const [nota, setNota] = useState('')
-  const [pestana, setPestana] = useState<'catalogo' | 'armar'>('catalogo')
+  const [pestana, setPestana] = useState<'catalogo' | 'armar' | 'cotizacion'>('catalogo')
+  const [cots, setCots] = useState<Record<number, { cantidad: number; dedicatoria: string }>>(() =>
+    cotizacionInicial && cotizaciones.some((c) => c.id === cotizacionInicial)
+      ? { [cotizacionInicial]: { cantidad: 1, dedicatoria: '' } }
+      : {},
+  )
   const [busqueda, setBusqueda] = useState('')
   const [carrito, setCarrito] = useState<Record<string, { cantidad: number; dedicatoria: string }>>({})
   const [ramos, setRamos] = useState<(RamoArmado & { clave: string; cantidad: number; dedicatoria: string })[]>([])
@@ -66,10 +82,26 @@ export default function VentaMostrador({
       dedicatoria: r.dedicatoria,
       detalle: r.extras.map((e) => `${e.cantidad}× ${e.nombre}`).join(', '),
     })),
+    ...Object.entries(cots)
+      .filter(([, l]) => l.cantidad > 0)
+      .flatMap(([id, l]) => {
+        const c = cotizaciones.find((x) => x.id === Number(id))
+        return c
+          ? [{ clave: `c${c.id}`, tipo: 'cotizacion' as const, nombre: c.nombre, precio: c.precio, imagen: null, cantidad: l.cantidad, dedicatoria: l.dedicatoria, detalle: `según ${c.codigo}` }]
+          : []
+      }),
   ]
   const total = lineas.reduce((s, l) => s + l.precio * l.cantidad, 0)
 
   function cambiar(clave: string, delta: number) {
+    if (clave.startsWith('c')) {
+      const id = Number(clave.slice(1))
+      setCots((c) => {
+        const actual = c[id] ?? { cantidad: 0, dedicatoria: '' }
+        return { ...c, [id]: { ...actual, cantidad: Math.min(99, Math.max(0, actual.cantidad + delta)) } }
+      })
+      return
+    }
     if (clave.startsWith('r')) {
       setRamos((rs) =>
         rs
@@ -85,7 +117,10 @@ export default function VentaMostrador({
   }
 
   function dedicar(clave: string, texto: string) {
-    if (clave.startsWith('r')) {
+    if (clave.startsWith('c')) {
+      const id = Number(clave.slice(1))
+      setCots((c) => ({ ...c, [id]: { ...c[id], dedicatoria: texto } }))
+    } else if (clave.startsWith('r')) {
       setRamos((rs) => rs.map((r) => (r.clave === clave ? { ...r, dedicatoria: texto } : r)))
     } else {
       setCarrito((c) => ({ ...c, [clave]: { ...c[clave], dedicatoria: texto } }))
@@ -112,9 +147,30 @@ export default function VentaMostrador({
           <button type="button" onClick={() => setPestana('armar')} aria-pressed={pestana === 'armar'} className={pestanaClase(pestana === 'armar')}>
             ❀ Armar ramo personalizado
           </button>
+          {cotizaciones.length > 0 && (
+            <button type="button" onClick={() => setPestana('cotizacion')} aria-pressed={pestana === 'cotizacion'} className={pestanaClase(pestana === 'cotizacion')}>
+              Desde cotización
+            </button>
+          )}
         </nav>
 
-        {pestana === 'armar' ? (
+        {pestana === 'cotizacion' ? (
+          <ul className="divide-y divide-linea">
+            {cotizaciones.map((c) => {
+              const n = cots[c.id]?.cantidad ?? 0
+              return (
+                <li key={c.id} className="flex items-center gap-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm">{c.nombre}</p>
+                    <p className="text-xs text-tinta-suave">{bs(c.precio)} · {c.codigo}</p>
+                  </div>
+                  {n > 0 && <span className="w-6 text-center text-sm font-medium tabular-nums">{n}</span>}
+                  <button type="button" onClick={() => cambiar(`c${c.id}`, 1)} aria-label={`Agregar ${c.nombre}`} className="grid size-8 place-items-center rounded-full border border-rosa-300 text-lg leading-none text-rosa-700 hover:bg-rosa-50">+</button>
+                </li>
+              )
+            })}
+          </ul>
+        ) : pestana === 'armar' ? (
           <ArmarRamo envoltorios={envoltorios} extras={extras} alAgregar={agregarRamo} />
         ) : (
           <>
@@ -169,6 +225,9 @@ export default function VentaMostrador({
               dedicatoria: r.dedicatoria,
               extras: r.extras.map((x) => ({ extra_id: x.id, cantidad: x.cantidad })),
             })),
+            ...Object.entries(cots)
+              .filter(([, l]) => l.cantidad > 0)
+              .map(([id, l]) => ({ tipo: 'cotizacion' as const, id: Number(id), cantidad: l.cantidad, dedicatoria: l.dedicatoria })),
           ]
           ejecutar(
             () => crearVentaMostrador(sinCliente ? null : cliente, payload, nota),
@@ -222,7 +281,7 @@ export default function VentaMostrador({
                         <span className="shrink-0 tabular-nums">{bs(l.precio * l.cantidad)}</span>
                       </div>
                       {l.detalle && <p className="text-xs text-tinta-suave">{l.detalle}</p>}
-                      {l.tipo === 'personalizado' && (
+                      {(l.tipo === 'personalizado' || l.tipo === 'cotizacion') && (
                         <div className="mt-1 flex items-center gap-1 text-xs">
                           <button type="button" onClick={() => cambiar(l.clave, -1)} className="rounded border border-linea px-1.5" aria-label="Uno menos">−</button>
                           <button type="button" onClick={() => cambiar(l.clave, 1)} className="rounded border border-linea px-1.5" aria-label="Uno más">+</button>

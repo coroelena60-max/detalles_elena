@@ -9,12 +9,18 @@ import VentaMostrador, { type Vendible } from './VentaMostrador'
 export const metadata: Metadata = { title: 'Nueva venta' }
 export const dynamic = 'force-dynamic'
 
-export default async function PaginaNuevaVenta() {
-  await exigirPermiso('venta.editar')
+export default async function PaginaNuevaVenta({
+  searchParams,
+}: {
+  searchParams: Promise<{ cotizacion?: string }>
+}) {
+  const sesion = await exigirPermiso('venta.editar')
+  const { cotizacion } = await searchParams
+  const verCotizaciones = sesion.permisos.has('cotizacion.ver')
   const sb = await clienteServidor()
 
   // lo mismo que se puede comprar en el catálogo: publicado y no agotado
-  const [{ data: productos }, { data: extras }, { data: envoltorios }] = await Promise.all([
+  const [{ data: productos }, { data: extras }, { data: envoltorios }, { data: cotizaciones }] = await Promise.all([
     sb
       .from('producto')
       .select('id, codigo, nombre, precio, imagenes:producto_imagen (url, es_principal, orden)')
@@ -29,6 +35,9 @@ export default async function PaginaNuevaVenta() {
       .from('envoltorio')
       .select('id, precio_base, espacios, estilo:estilo_id (nombre, orden), tamano:tamano_id (codigo, orden)')
       .eq('activo', true),
+    verCotizaciones
+      ? sb.from('v_cotizacion').select('id, codigo, nombre, precio').order('updated_at', { ascending: false }).limit(100)
+      : Promise.resolve({ data: [] as { id: number | null; codigo: string | null; nombre: string | null; precio: number | null }[] }),
   ])
 
   const vendibles: Vendible[] = [
@@ -85,9 +94,20 @@ export default async function PaginaNuevaVenta() {
       <h1 className="mt-3 text-xl font-semibold">Nueva venta de mostrador</h1>
       <p className="mt-1 text-sm text-tinta-suave">
         Para lo que se vende en la tienda o se cierra por teléfono sin pasar por el catálogo.
-        Podés vender productos ya armados, extras sueltos o armar un ramo personalizado.
+        Podés vender productos ya armados, extras sueltos, armar un ramo personalizado o vender una cotización.
       </p>
-      <VentaMostrador vendibles={vendibles} envoltorios={listaEnvoltorios} extras={extrasArmado} />
+      <VentaMostrador
+        vendibles={vendibles}
+        envoltorios={listaEnvoltorios}
+        extras={extrasArmado}
+        cotizaciones={(cotizaciones ?? []).map((c) => ({
+          id: c.id as number,
+          codigo: c.codigo ?? '',
+          nombre: c.nombre ?? '',
+          precio: Number(c.precio),
+        }))}
+        cotizacionInicial={cotizacion ? Number(cotizacion) : null}
+      />
     </div>
   )
 }

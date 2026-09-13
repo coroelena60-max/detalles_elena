@@ -299,6 +299,262 @@ export type Database = {
           },
         ]
       }
+      cotizacion: {
+        Row: {
+          codigo: string | null
+          costo_hora: number
+          creado_por: string | null
+          created_at: string
+          descripcion: string | null
+          id: number
+          margen_pct: number
+          minutos: number
+          nombre: string
+          otros_monto: number
+          otros_pct: number
+          precio_final: number | null
+          producto_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          codigo?: string | null
+          costo_hora?: number
+          creado_por?: string | null
+          created_at?: string
+          descripcion?: string | null
+          id?: never
+          margen_pct?: number
+          minutos?: number
+          nombre: string
+          otros_monto?: number
+          otros_pct?: number
+          precio_final?: number | null
+          producto_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string | null
+          costo_hora?: number
+          creado_por?: string | null
+          created_at?: string
+          descripcion?: string | null
+          id?: never
+          margen_pct?: number
+          minutos?: number
+          nombre?: string
+          otros_monto?: number
+          otros_pct?: number
+          precio_final?: number | null
+          producto_id?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotizacion_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "perfil"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "v_usuario_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "producto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_catalogo_producto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_costo_producto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_existencia_producto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_producto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_producto_admin"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cotizacion_extra: {
+        Row: {
+          cantidad: number
+          costo_unitario: number
+          cotizacion_id: number
+          extra_id: number | null
+          id: number
+          nombre: string
+          orden: number
+        }
+        Insert: {
+          cantidad: number
+          costo_unitario?: number
+          cotizacion_id: number
+          extra_id?: number | null
+          id?: never
+          nombre: string
+          orden?: number
+        }
+        Update: {
+          cantidad?: number
+          costo_unitario?: number
+          cotizacion_id?: number
+          extra_id?: number | null
+          id?: never
+          nombre?: string
+          orden?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotizacion_extra_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "cotizacion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_extra_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "v_cotizacion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_extra_extra_id_fkey"
+            columns: ["extra_id"]
+            isOneToOne: false
+            referencedRelation: "extra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_extra_extra_id_fkey"
+            columns: ["extra_id"]
+            isOneToOne: false
+            referencedRelation: "v_costo_extra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_extra_extra_id_fkey"
+            columns: ["extra_id"]
+            isOneToOne: false
+            referencedRelation: "v_existencia_extra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_extra_extra_id_fkey"
+            columns: ["extra_id"]
+            isOneToOne: false
+            referencedRelation: "v_reporte_extra_vendido"
+            referencedColumns: ["extra_id"]
+          },
+        ]
+      }
+      cotizacion_material: {
+        Row: {
+          cantidad_compra: number
+          cantidad_usada: number
+          cotizacion_id: number
+          factor: number
+          id: number
+          insumo_id: number | null
+          nombre: string
+          orden: number
+          precio_compra: number
+          unidad: Database["public"]["Enums"]["unidad_medida"]
+        }
+        Insert: {
+          cantidad_compra: number
+          cantidad_usada: number
+          cotizacion_id: number
+          factor?: number
+          id?: never
+          insumo_id?: number | null
+          nombre: string
+          orden?: number
+          precio_compra: number
+          unidad?: Database["public"]["Enums"]["unidad_medida"]
+        }
+        Update: {
+          cantidad_compra?: number
+          cantidad_usada?: number
+          cotizacion_id?: number
+          factor?: number
+          id?: never
+          insumo_id?: number | null
+          nombre?: string
+          orden?: number
+          precio_compra?: number
+          unidad?: Database["public"]["Enums"]["unidad_medida"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotizacion_material_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "cotizacion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_material_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "v_cotizacion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_material_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "insumo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_material_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "v_existencia_insumo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_material_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "v_reporte_consumo_insumo"
+            referencedColumns: ["insumo_id"]
+          },
+        ]
+      }
       entrega: {
         Row: {
           created_at: string
@@ -1187,6 +1443,7 @@ export type Database = {
       pedido_item: {
         Row: {
           cantidad: number
+          cotizacion_id: number | null
           created_at: string
           dedicatoria: string | null
           envoltorio_id: number | null
@@ -1203,6 +1460,7 @@ export type Database = {
         }
         Insert: {
           cantidad?: number
+          cotizacion_id?: number | null
           created_at?: string
           dedicatoria?: string | null
           envoltorio_id?: number | null
@@ -1219,6 +1477,7 @@ export type Database = {
         }
         Update: {
           cantidad?: number
+          cotizacion_id?: number | null
           created_at?: string
           dedicatoria?: string | null
           envoltorio_id?: number | null
@@ -1234,6 +1493,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "pedido_item_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "cotizacion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedido_item_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "v_cotizacion"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pedido_item_envoltorio_id_fkey"
             columns: ["envoltorio_id"]
@@ -2157,6 +2430,92 @@ export type Database = {
         }
         Relationships: []
       }
+      v_cotizacion: {
+        Row: {
+          codigo: string | null
+          costo_extras: number | null
+          costo_hora: number | null
+          costo_mano_obra: number | null
+          costo_materiales: number | null
+          costo_otros: number | null
+          costo_total: number | null
+          creado_por: string | null
+          created_at: string | null
+          descripcion: string | null
+          extras: number | null
+          ganancia: number | null
+          id: number | null
+          margen_pct: number | null
+          materiales: number | null
+          minutos: number | null
+          nombre: string | null
+          otros_monto: number | null
+          otros_pct: number | null
+          precio: number | null
+          precio_final: number | null
+          precio_sugerido: number | null
+          producto_id: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotizacion_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "perfil"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "v_usuario_admin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "producto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_catalogo_producto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_costo_producto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_existencia_producto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_margen_producto"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "v_producto_admin"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_existencia_extra: {
         Row: {
           bajo_minimo: boolean | null
@@ -2554,6 +2913,7 @@ export type Database = {
         Args: { p_email: string; p_rol_slug: string }
         Returns: string
       }
+      borrar_cotizacion: { Args: { p_id: number }; Returns: undefined }
       cambiar_estado_pedido: {
         Args: {
           p_estado: Database["public"]["Enums"]["estado_pedido"]
@@ -2563,6 +2923,10 @@ export type Database = {
         Returns: Json
       }
       cantidad_admins: { Args: never; Returns: number }
+      convertir_cotizacion_en_producto: {
+        Args: { p_categoria_id: number; p_id: number }
+        Returns: Json
+      }
       costear_configuracion: {
         Args: { p_envoltorio_id: number; p_extras?: Json }
         Returns: Json
@@ -2595,6 +2959,7 @@ export type Database = {
         Args: { p_envoltorio_id: number }
         Returns: string
       }
+      guardar_cotizacion: { Args: { p: Json }; Returns: Json }
       marcar_pedido_enviado_whatsapp: {
         Args: { p_codigo: string }
         Returns: undefined

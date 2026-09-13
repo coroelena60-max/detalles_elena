@@ -6,6 +6,7 @@
 export const ETIQUETA_MODULO: Record<string, string> = {
   administracion: 'Administración',
   maestro: 'Productos',
+  cotizacion: 'Cotización',
   inventario: 'Inventario',
   compra: 'Compras',
   venta: 'Ventas',
@@ -17,6 +18,7 @@ export const ETIQUETA_MODULO: Record<string, string> = {
 export const ORDEN_MODULO = [
   'venta',
   'maestro',
+  'cotizacion',
   'inventario',
   'compra',
   'contabilidad',

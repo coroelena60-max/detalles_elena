@@ -66,6 +66,12 @@ export const MODULOS: Modulo[] = [
     ],
   },
   {
+    clave: 'cotizacion',
+    etiqueta: 'Cotización',
+    base: '/cotizacion',
+    secciones: [{ href: '/cotizacion', etiqueta: 'Cotizaciones', permisos: ['cotizacion.ver'] }],
+  },
+  {
     clave: 'compra',
     etiqueta: 'Compras',
     base: '/compras',

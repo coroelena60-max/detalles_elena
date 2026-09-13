@@ -76,8 +76,8 @@ export async function registrarPago(
 // ---------------------------------------------------------------------------
 
 export interface LineaMostrador {
-  tipo: 'producto' | 'extra' | 'personalizado'
-  /** producto_id, extra_id o, en un ramo personalizado, envoltorio_id */
+  tipo: 'producto' | 'extra' | 'personalizado' | 'cotizacion'
+  /** producto_id, extra_id, envoltorio_id (ramo personalizado) o cotizacion_id */
   id: number
   cantidad: number
   dedicatoria?: string
@@ -102,6 +102,7 @@ export async function crearVentaMostrador(
     .map((l) => {
       const dedicatoria = l.dedicatoria?.trim() || undefined
       if (l.tipo === 'producto') return { tipo: 'producto', producto_id: l.id, cantidad: l.cantidad, dedicatoria }
+      if (l.tipo === 'cotizacion') return { tipo: 'cotizacion', cotizacion_id: l.id, cantidad: l.cantidad, dedicatoria }
       if (l.tipo === 'personalizado') {
         return {
           tipo: 'personalizado',

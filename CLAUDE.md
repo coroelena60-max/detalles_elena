@@ -134,11 +134,12 @@ Fuente de verdad: `supabase/migrations/`. Probadas contra Postgres 16 local
 | `0020_superadmin.sql` | rol `superadmin` con acceso total; el rol y las cuentas que lo tienen quedan **invisibles** para todos los demás |
 | `0021_contabilidad_reportes_y_candados.sql` | candado de permiso en todas las RPC del panel, `gasto` + `categoria_gasto`, `anular_compra()`/`anular_gasto()`, reportes por rango (`reporte_ventas`, `reporte_compras`, `reporte_ventas_confirmadas`, `reporte_ganancias`, `reporte_bitacora`), vistas `v_kardex` y `v_cliente_resumen`, bitácora sin cambios vacíos |
 | `0022_venta_sin_cliente.sql` | cliente genérico **S/N** (teléfono `0000000`, protegido contra renombre/borrado); `crear_venta_mostrador(p_cliente => {"sin_cliente": true})` lo usa y el panel lo muestra como **S/C** |
+| `0023_cotizacion.sql` | módulo **Cotización**: `cotizacion` + `cotizacion_material` + `cotizacion_extra`, vista `v_cotizacion` (la cuenta), `guardar_cotizacion()`, `convertir_cotizacion_en_producto()`, y `crear_venta_mostrador()` acepta líneas `{"tipo":"cotizacion"}`; permisos `cotizacion.ver/editar` |
 
 ### Cómo aplicarlas
 
 Supabase → SQL Editor → pegar `supabase/APLICAR_TODO.sql` → Run.
-(Es la concatenación de las 22 en orden. Si se agrega una migración, regenerarlo.)
+(Es la concatenación de las 23 en orden. Si se agrega una migración, regenerarlo.)
 
 Storage: crear/usar el bucket `catalogo` y subir `assets/catalogo/` manteniendo las
 subcarpetas `productos/`, `extras/`, `marca/`. Recién después correr `0009`.
@@ -375,6 +376,12 @@ Reglas del panel:
   son `security definer` y eso se saltea RLS: sin el candado, cualquier cuenta con sesión
   podía cobrar, entregar pedidos o mover stock (pasó hasta la 0021). Si se escribe una
   función nueva que escribe datos, lleva su `exigir_permiso` en la primera línea.
+- **Cotización = calculadora, no mueve stock.** Material: costo = precio pagado ÷ (cantidad comprada × factor
+  de presentación, ej. docena = 12) × cantidad usada. Extras a su costo por receta (editable por línea). Mano de
+  obra = minutos × Bs/hora. Otros = % sobre lo anterior + monto fijo. Precio sugerido = costo × (1 + margen) redondeado
+  a 5; `precio_final` lo pisa. La cuenta vive en `v_cotizacion` (la pantalla la repite solo para mostrar en vivo).
+  Vendida en mostrador entra como línea `personalizado` con `cotizacion_id`; sus extras van a Bs 0 para que la
+  entrega descuente stock.
 - **Gasto ≠ compra.** Una compra trae insumos que entran al inventario; un gasto es plata
   que sale y no vuelve como mercadería (alquiler, luz, delivery, publicidad). Un gasto no
   se edita ni se borra (grant revocado): se anula con motivo.
@@ -403,6 +410,7 @@ Módulos construidos (todos los del diagrama):
 |---|---|
 | Administración | `/usuarios` (usuarios), `/usuarios/roles`, `/usuarios/permisos`, `/usuarios/bitacora` (reporte por fechas + usuario + entidad) |
 | Inventario | `/inventario` (stock de productos), `/inventario/extras` (con "producir" que descuenta la receta), `/inventario/movimientos` (kardex) |
+| Cotización | `/cotizacion` (lista), `/cotizacion/nueva`, `/cotizacion/[id]`: calculadora de costo y precio |
 | Productos (maestro) | `/productos` (CRUD, fotos, composición), `/productos/personalizado` (extras con receta y foto, envoltorios, `/cotizador`), `/productos/categorias` |
 | Compras | `/compras` (borrador → insumos → recibir/anular), `/compras/insumos`, `/compras/proveedores` |
 | Pedidos | `/pedidos` (lo que entra por el catálogo web, `canal <> 'mostrador'`) |
