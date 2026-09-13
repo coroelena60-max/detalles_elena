@@ -133,11 +133,12 @@ Fuente de verdad: `supabase/migrations/`. Probadas contra Postgres 16 local
 | `0019_usuarios_panel.sql` | `v_usuario_admin`, `v_rol_admin`, `cantidad_admins()` y los candados para no quedarse sin ningún administrador |
 | `0020_superadmin.sql` | rol `superadmin` con acceso total; el rol y las cuentas que lo tienen quedan **invisibles** para todos los demás |
 | `0021_contabilidad_reportes_y_candados.sql` | candado de permiso en todas las RPC del panel, `gasto` + `categoria_gasto`, `anular_compra()`/`anular_gasto()`, reportes por rango (`reporte_ventas`, `reporte_compras`, `reporte_ventas_confirmadas`, `reporte_ganancias`, `reporte_bitacora`), vistas `v_kardex` y `v_cliente_resumen`, bitácora sin cambios vacíos |
+| `0022_venta_sin_cliente.sql` | cliente genérico **S/N** (teléfono `0000000`, protegido contra renombre/borrado); `crear_venta_mostrador(p_cliente => {"sin_cliente": true})` lo usa y el panel lo muestra como **S/C** |
 
 ### Cómo aplicarlas
 
 Supabase → SQL Editor → pegar `supabase/APLICAR_TODO.sql` → Run.
-(Es la concatenación de las 21 en orden. Si se agrega una migración, regenerarlo.)
+(Es la concatenación de las 22 en orden. Si se agrega una migración, regenerarlo.)
 
 Storage: crear/usar el bucket `catalogo` y subir `assets/catalogo/` manteniendo las
 subcarpetas `productos/`, `extras/`, `marca/`. Recién después correr `0009`.

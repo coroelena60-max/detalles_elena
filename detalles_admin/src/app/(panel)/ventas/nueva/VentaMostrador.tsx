@@ -18,6 +18,7 @@ export interface Vendible {
 export default function VentaMostrador({ vendibles }: { vendibles: Vendible[] }) {
   const { pendiente, aviso, ejecutar, router } = useAccion()
   const [cliente, setCliente] = useState({ nombre: '', telefono: '', email: '' })
+  const [sinCliente, setSinCliente] = useState(false)
   const [nota, setNota] = useState('')
   const [busqueda, setBusqueda] = useState('')
   const [carrito, setCarrito] = useState<Record<string, { cantidad: number; dedicatoria: string }>>({})
@@ -78,20 +79,39 @@ export default function VentaMostrador({ vendibles }: { vendibles: Vendible[] })
           e.preventDefault()
           const payload: LineaMostrador[] = lineas.map((l) => ({ tipo: l.tipo, id: l.id, cantidad: l.cantidad, dedicatoria: l.dedicatoria }))
           ejecutar(
-            () => crearVentaMostrador(cliente, payload, nota),
+            () => crearVentaMostrador(sinCliente ? null : cliente, payload, nota),
             (r) => r.ok && r.codigo && router.push(`/ventas/${r.codigo}`),
           )
         }}
         className="h-fit space-y-4 lg:sticky lg:top-4"
       >
         <section className="tarjeta p-4">
-          <h2 className="text-sm font-semibold">Cliente</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold">Cliente</h2>
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={sinCliente}
+                onChange={(e) => setSinCliente(e.target.checked)}
+                className="size-4 accent-rosa-700"
+              />
+              Venta sin cliente
+            </label>
+          </div>
+          {sinCliente ? (
+            <p className="mt-2 rounded-lg bg-rosa-50 px-3 py-2 text-sm text-tinta-suave">
+              Se registra como <strong className="text-tinta">S/C · Sin cliente</strong>. No hace falta nombre ni teléfono.
+            </p>
+          ) : (
+          <>
           <div className="mt-2 space-y-2">
             <input aria-label="Nombre" required value={cliente.nombre} onChange={(e) => setCliente({ ...cliente, nombre: e.target.value })} placeholder="Nombre" className="campo focus:campo-foco" />
             <input aria-label="Teléfono" required inputMode="tel" value={cliente.telefono} onChange={(e) => setCliente({ ...cliente, telefono: e.target.value })} placeholder="Teléfono (70000000)" className="campo focus:campo-foco" />
             <input aria-label="Correo" type="email" value={cliente.email} onChange={(e) => setCliente({ ...cliente, email: e.target.value })} placeholder="Correo (opcional)" className="campo focus:campo-foco" />
           </div>
           <p className="mt-2 text-xs text-tinta-suave">Si el teléfono ya compró antes, se suma a su historial.</p>
+          </>
+          )}
         </section>
 
         <section className="tarjeta p-4">

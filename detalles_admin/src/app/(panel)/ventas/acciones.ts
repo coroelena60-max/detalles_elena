@@ -83,14 +83,17 @@ export interface LineaMostrador {
 }
 
 export async function crearVentaMostrador(
-  cliente: { nombre: string; telefono: string; email: string },
+  cliente: { nombre: string; telefono: string; email: string } | null,
   lineas: LineaMostrador[],
   nota: string,
 ): Promise<Resultado & { codigo?: string }> {
-  if (cliente.nombre.trim().length < 2) return { ok: false, mensaje: 'Escribí el nombre del cliente.' }
-  const telefono = cliente.telefono.replace(/\D/g, '')
-  if (telefono.length < 7 || telefono.length > 15) {
-    return { ok: false, mensaje: 'El teléfono tiene que tener entre 7 y 15 dígitos.' }
+  // null = venta sin cliente: la base la cuelga del cliente genérico S/N
+  const telefono = cliente?.telefono.replace(/\D/g, '') ?? ''
+  if (cliente) {
+    if (cliente.nombre.trim().length < 2) return { ok: false, mensaje: 'Escribí el nombre del cliente.' }
+    if (telefono.length < 7 || telefono.length > 15) {
+      return { ok: false, mensaje: 'El teléfono tiene que tener entre 7 y 15 dígitos.' }
+    }
   }
   const items = lineas
     .filter((l) => l.cantidad > 0)
@@ -103,7 +106,9 @@ export async function crearVentaMostrador(
 
   const sb = await clienteServidor()
   const { data, error } = await sb.rpc('crear_venta_mostrador', {
-    p_cliente: { nombre: cliente.nombre.trim(), telefono, email: cliente.email.trim() || undefined },
+    p_cliente: cliente
+      ? { nombre: cliente.nombre.trim(), telefono, email: cliente.email.trim() || undefined }
+      : { sin_cliente: true },
     p_items: items,
     p_nota: nota.trim() || undefined,
   })

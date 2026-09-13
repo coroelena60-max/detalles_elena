@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ESTADOS, ESTADO_PAGO, METODOS_PAGO } from '@/lib/estados'
+import { ESTADOS, ESTADO_PAGO, METODOS_PAGO, nombreCliente } from '@/lib/estados'
 import { bs, fechaHora, numero } from '@/lib/formato'
 import { exigirPermiso } from '@/lib/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
@@ -204,8 +204,8 @@ export default async function PaginaPedido({
         <div className="space-y-4">
           <section className="tarjeta p-4">
             <h2 className="text-sm font-semibold">Cliente</h2>
-            <p className="mt-2 text-sm font-medium">{cliente?.nombre ?? '—'}</p>
-            {cliente?.telefono && (
+            <p className="mt-2 text-sm font-medium">{nombreCliente(cliente)}</p>
+            {cliente?.telefono && cliente.nombre !== 'S/N' && (
               <p className="mt-1 text-sm">
                 <a
                   href={`https://wa.me/${telefonoWhatsapp}`}

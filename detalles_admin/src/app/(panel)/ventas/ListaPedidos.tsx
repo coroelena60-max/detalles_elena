@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Encabezado from '@/components/Encabezado'
 import { BOTON } from '@/components/ui'
-import { ESTADOS, ESTADO_PAGO, rutaPedido, type EstadoPedido } from '@/lib/estados'
+import { ESTADOS, ESTADO_PAGO, rutaPedido, nombreCliente, type EstadoPedido } from '@/lib/estados'
 import { bs, haceCuanto } from '@/lib/formato'
 import { exigirPermiso } from '@/lib/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
@@ -151,7 +151,7 @@ export default async function ListaPedidos({
                       {p.codigo}
                     </span>
                     <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                      {cliente?.nombre ?? 'Sin cliente'}
+                      {nombreCliente(cliente)}
                     </span>
                     <span className={`rounded-full px-2 py-0.5 text-xs ${estado.clase}`}>
                       {estado.etiqueta}
@@ -165,7 +165,7 @@ export default async function ListaPedidos({
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-tinta-suave">
                     <span>{haceCuanto(p.created_at)}</span>
-                    {cliente?.telefono && <span>{cliente.telefono}</span>}
+                    {cliente?.telefono && cliente.nombre !== 'S/N' && <span>{cliente.telefono}</span>}
                   </div>
                 </Link>
               </li>

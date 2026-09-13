@@ -2681,6 +2681,7 @@ export type Database = {
       rol_es_superadmin: { Args: { p_rol: number }; Returns: boolean }
       sincronizar_permisos_admin: { Args: never; Returns: number }
       slugify: { Args: { p_texto: string }; Returns: string }
+      telefono_sin_cliente: { Args: never; Returns: string }
       tiene_permiso: { Args: { p_codigo: string }; Returns: boolean }
       unaccent: { Args: { "": string }; Returns: string }
     }

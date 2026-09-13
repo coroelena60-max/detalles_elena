@@ -115,3 +115,12 @@ export const ESTADOS_PUBLICACION: Record<EstadoPublicacion, { etiqueta: string; 
 export function rutaPedido(codigo: string | null, canal: string | null): string {
   return `${canal === 'mostrador' ? '/ventas' : '/pedidos'}/${codigo}`
 }
+
+/** Teléfono del cliente genérico "S/N" (migración 0022): la venta queda como "S/C". */
+export const TELEFONO_SIN_CLIENTE = '0000000'
+
+export function nombreCliente(c: { nombre?: string | null; telefono?: string | null } | null): string {
+  if (!c) return 'Sin cliente'
+  if (c.telefono === TELEFONO_SIN_CLIENTE || c.nombre === 'S/N') return 'S/C · Sin cliente'
+  return c.nombre ?? 'Sin cliente'
+}

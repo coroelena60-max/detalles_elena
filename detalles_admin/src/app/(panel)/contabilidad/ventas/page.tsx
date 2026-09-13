@@ -144,7 +144,7 @@ export default async function PaginaVentasConfirmadas({
                             <span className="ml-1 text-tinta-suave">· mostrador</span>
                           )}
                         </td>
-                        <td className="px-3 py-2">{v.cliente ?? '—'}</td>
+                        <td className="px-3 py-2">{v.cliente === 'S/N' ? 'S/C · Sin cliente' : (v.cliente ?? '—')}</td>
                         <td className="px-3 py-2">
                           <Etiqueta clase={ESTADOS[v.estado]?.clase}>
                             {ESTADOS[v.estado]?.etiqueta ?? v.estado}
