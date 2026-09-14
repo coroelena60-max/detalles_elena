@@ -70,6 +70,24 @@ export async function registrarPago(
   return { ok: true, mensaje: 'Pago registrado.' }
 }
 
+/**
+ * Devolver un cobro (migración 0027): el cobro queda a la vista marcado como
+ * devuelto, con quién y por qué, y deja de sumar en lo cobrado. No se deshace.
+ */
+export async function devolverCobro(codigo: string, pagoId: number, motivo: string): Promise<Resultado> {
+  if (motivo.trim().length < 3) return { ok: false, mensaje: 'Escribí por qué se devuelve.' }
+  const sb = await clienteServidor()
+  const { error } = await sb.rpc('devolver_cobro', { p_pago_id: pagoId, p_motivo: motivo.trim() })
+  if (error) return { ok: false, mensaje: traducirError(error.message) }
+
+  revalidatePath(`/ventas/${codigo}`)
+  revalidatePath(`/pedidos/${codigo}`)
+  revalidatePath('/ventas')
+  revalidatePath('/pedidos')
+  revalidatePath('/')
+  return { ok: true, mensaje: 'Cobro devuelto.' }
+}
+
 // ---------------------------------------------------------------------------
 // Venta de mostrador: misma función de la base que el catálogo (los precios
 // los pone la base), pero nace confirmada y con canal "mostrador".

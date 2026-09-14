@@ -1318,10 +1318,13 @@ export type Database = {
       pago: {
         Row: {
           created_at: string
+          devuelto_at: string | null
+          devuelto_por: string | null
           fecha: string
           id: number
           metodo: Database["public"]["Enums"]["metodo_pago"]
           monto: number
+          motivo_devolucion: string | null
           nota: string | null
           pedido_id: number
           referencia: string | null
@@ -1330,10 +1333,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          devuelto_at?: string | null
+          devuelto_por?: string | null
           fecha?: string
           id?: never
           metodo?: Database["public"]["Enums"]["metodo_pago"]
           monto: number
+          motivo_devolucion?: string | null
           nota?: string | null
           pedido_id: number
           referencia?: string | null
@@ -1342,10 +1348,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          devuelto_at?: string | null
+          devuelto_por?: string | null
           fecha?: string
           id?: never
           metodo?: Database["public"]["Enums"]["metodo_pago"]
           monto?: number
+          motivo_devolucion?: string | null
           nota?: string | null
           pedido_id?: number
           referencia?: string | null
@@ -3039,6 +3048,10 @@ export type Database = {
       }
       es_admin: { Args: never; Returns: boolean }
       es_superadmin: { Args: never; Returns: boolean }
+      devolver_cobro: {
+        Args: { p_motivo: string; p_pago_id: number }
+        Returns: Json
+      }
       estados_venta_confirmada: {
         Args: never
         Returns: Database["public"]["Enums"]["estado_pedido"][]

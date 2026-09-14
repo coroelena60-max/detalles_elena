@@ -8,6 +8,8 @@ import { ESTADOS, ESTADO_PAGO, METODOS_PAGO, fotoPrincipal, nombreCliente } from
 import { bs, fechaHora, numero } from '@/lib/formato'
 import { exigirSesion } from '@/lib/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
+import AnularConMotivo from '@/components/AnularConMotivo'
+import { devolverCobro } from '../acciones'
 import AccionesPedido from './AccionesPedido'
 
 export const dynamic = 'force-dynamic'
@@ -54,7 +56,7 @@ export default async function PaginaPedido({
     sb.from('v_pedido_saldo').select('*').eq('id', pedido.id).maybeSingle(),
     sb
       .from('pago')
-      .select('id, monto, metodo, referencia, fecha')
+      .select('id, monto, metodo, referencia, fecha, devuelto_at, motivo_devolucion')
       .eq('pedido_id', pedido.id)
       .order('fecha'),
   ])
@@ -75,6 +77,8 @@ export default async function PaginaPedido({
     zona: { nombre: string; costo_referencia: number | null } | null
   } | null
   const pago = ESTADO_PAGO[saldo?.estado_pago ?? 'pendiente']
+  const puedeEditarPedido = sesion.permisos.has(pedido.canal === 'mostrador' ? 'venta.editar' : 'pedido.editar')
+  const puedeDevolver = puedeEditarPedido && sesion.permisos.has('pago.registrar')
   const telefonoWhatsapp = cliente?.telefono?.replace(/[^0-9]/g, '')
 
   return (
@@ -206,15 +210,30 @@ export default async function PaginaPedido({
               <h2 className="text-base font-semibold">Cobros</h2>
               <ul className="mt-3 divide-y divide-linea text-sm">
                 {pagos.map((g) => (
-                  <li key={g.id} className="flex items-center gap-3 py-2">
-                    <span className="flex-1">{METODOS_PAGO[g.metodo]}</span>
-                    {g.referencia && (
-                      <span className="text-xs text-tinta-suave">{g.referencia}</span>
-                    )}
-                    <span className="text-xs text-tinta-suave">
-                      {fechaHora(g.fecha)}
+                  <li key={g.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5">
+                    <span className={`flex-1 ${g.devuelto_at ? 'text-tinta-suave line-through' : ''}`}>
+                      {METODOS_PAGO[g.metodo]}
                     </span>
-                    <span className="font-semibold">{bs(g.monto)}</span>
+                    {g.referencia && <span className="text-tinta-suave">{g.referencia}</span>}
+                    <span className="text-tinta-suave">{fechaHora(g.fecha)}</span>
+                    <span className={`font-semibold ${g.devuelto_at ? 'text-tinta-suave line-through' : ''}`}>
+                      {bs(g.monto)}
+                    </span>
+                    {g.devuelto_at ? (
+                      <span className="w-full rounded-lg bg-alerta-suave px-2 py-1 text-alerta">
+                        Devuelto el {fechaHora(g.devuelto_at)} · {g.motivo_devolucion}
+                      </span>
+                    ) : (
+                      puedeDevolver && (
+                        <span className="flex w-full justify-end sm:w-auto">
+                          <AnularConMotivo
+                            accion={devolverCobro.bind(null, codigo, g.id)}
+                            etiqueta="Devolver"
+                            placeholder="¿Por qué se devuelve?"
+                          />
+                        </span>
+                      )
+                    )}
                   </li>
                 ))}
               </ul>
@@ -229,6 +248,7 @@ export default async function PaginaPedido({
             pedidoId={pedido.id}
             estado={pedido.estado}
             saldo={Number(saldo?.saldo ?? 0)}
+            pagado={Number(saldo?.pagado ?? 0)}
             puedeEditar={sesion.permisos.has(pedido.canal === 'mostrador' ? 'venta.editar' : 'pedido.editar')}
             puedeCobrar={sesion.permisos.has('pago.registrar')}
           />

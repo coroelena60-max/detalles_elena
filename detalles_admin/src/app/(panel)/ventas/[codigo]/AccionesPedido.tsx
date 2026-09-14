@@ -17,6 +17,8 @@ interface Props {
   pedidoId: number
   estado: EstadoPedido
   saldo: number
+  /** lo cobrado sin contar los cobros devueltos */
+  pagado: number
   puedeEditar: boolean
   puedeCobrar: boolean
 }
@@ -41,6 +43,7 @@ export default function AccionesPedido({
   pedidoId,
   estado,
   saldo,
+  pagado,
   puedeEditar,
   puedeCobrar,
 }: Props) {
@@ -85,10 +88,17 @@ export default function AccionesPedido({
           <h2 className="text-base font-semibold">Qué sigue</h2>
 
           {cerrado ? (
-            <p className={`mt-3 flex items-center gap-2 rounded-lg px-3 py-3 font-medium ${estado === 'entregado' ? 'bg-ok-suave text-ok' : 'bg-alerta-suave text-alerta'}`}>
-              <Icono nombre={estado === 'entregado' ? 'listo' : 'cerrar'} />
-              {estado === 'entregado' ? 'Ya se entregó' : 'Está cancelado'}
-            </p>
+            <>
+              <p className={`mt-3 flex items-center gap-2 rounded-lg px-3 py-3 font-medium ${estado === 'entregado' ? 'bg-ok-suave text-ok' : 'bg-alerta-suave text-alerta'}`}>
+                <Icono nombre={estado === 'entregado' ? 'listo' : 'cerrar'} />
+                {estado === 'entregado' ? 'Ya se entregó' : 'Está cancelado'}
+              </p>
+              {estado === 'cancelado' && pagado > 0 && (
+                <p className="mt-2 rounded-lg bg-aviso-suave px-3 py-2 text-sm text-aviso">
+                  Se cobraron {bs(pagado)}. Si devolviste la plata, tocá <strong>Devolver</strong> en Cobros.
+                </p>
+              )}
+            </>
           ) : (
             <>
               {siguiente && paso && (
@@ -205,7 +215,7 @@ export default function AccionesPedido({
       {puedeEditar && !cerrado && (
         <div className="text-center">
           <BotonConfirmar
-            pregunta={`¿Cancelar ${codigo}? Después no se puede volver atrás.`}
+            pregunta={`¿Cancelar ${codigo}?${pagado > 0 ? ` Ya se cobraron ${bs(pagado)}.` : ''} Después no se puede volver atrás.`}
             si="Sí, cancelar"
             disabled={pendiente}
             alConfirmar={() => avanzar('cancelado')}

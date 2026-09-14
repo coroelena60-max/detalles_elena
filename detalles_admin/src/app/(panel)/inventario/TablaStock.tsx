@@ -65,7 +65,7 @@ function Mover({
             type="button"
             onClick={() => setMovida(m.clave)}
             aria-pressed={movida === m.clave}
-            className={`rounded-full px-3 py-1 text-xs transition ${
+            className={`min-h-10 rounded-full px-4 py-2 text-sm font-medium transition ${
               movida === m.clave ? 'bg-rosa-600 text-white' : 'bg-white text-tinta-suave hover:text-tinta'
             }`}
           >
@@ -73,11 +73,11 @@ function Mover({
           </button>
         ))}
       </div>
-      <p className="mt-2 text-xs text-tinta-suave">{def.ayuda}</p>
+      <p className="mt-2 text-sm text-tinta-suave">{def.ayuda}</p>
 
       <div className="mt-2 flex flex-wrap items-end gap-2">
         <div className="w-28">
-          <label htmlFor={`c-${fila.id}`} className="block text-xs font-medium">
+          <label htmlFor={`c-${fila.id}`} className="block text-sm font-medium">
             {def.campo}
           </label>
           <input
@@ -87,12 +87,12 @@ function Mover({
             required
             value={cantidad}
             onChange={(e) => setCantidad(e.target.value)}
-            className="campo mt-1 py-1.5 text-right tabular-nums focus:campo-foco"
+            className="campo mt-1 text-right tabular-nums focus:campo-foco"
           />
         </div>
         {!conReceta && (
           <div className="min-w-40 flex-1">
-            <label htmlFor={`n-${fila.id}`} className="block text-xs font-medium">
+            <label htmlFor={`n-${fila.id}`} className="block text-sm font-medium">
               Nota
             </label>
             <input
@@ -100,18 +100,18 @@ function Mover({
               value={nota}
               onChange={(e) => setNota(e.target.value)}
               placeholder="Opcional"
-              className="campo mt-1 py-1.5 focus:campo-foco"
+              className="campo mt-1 focus:campo-foco"
             />
           </div>
         )}
         <button
           type="submit"
           disabled={pendiente || cantidad === '' || !Number.isFinite(n)}
-          className="rounded-lg bg-rosa-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-rosa-700 disabled:opacity-50"
+          className="min-h-11 rounded-lg bg-rosa-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-rosa-700 disabled:opacity-50"
         >
           {pendiente ? '…' : 'Guardar'}
         </button>
-        <button type="button" onClick={alCerrar} className="px-2 py-1.5 text-sm text-tinta-suave hover:text-tinta">
+        <button type="button" onClick={alCerrar} className="min-h-11 px-3 py-2 text-sm text-tinta-suave hover:text-tinta">
           Cerrar
         </button>
       </div>
@@ -203,7 +203,7 @@ export default function TablaStock({
                   type="button"
                   onClick={() => setAbierta(abierta === f.id ? null : f.id)}
                   aria-expanded={abierta === f.id}
-                  className="rounded-lg border border-linea bg-white px-3 py-1.5 text-sm text-tinta-suave transition hover:border-rosa-300 hover:text-rosa-700"
+                  className="min-h-10 rounded-lg border border-linea bg-white px-4 py-2 text-sm text-tinta-suave transition hover:border-rosa-300 hover:text-rosa-700"
                 >
                   Mover
                 </button>

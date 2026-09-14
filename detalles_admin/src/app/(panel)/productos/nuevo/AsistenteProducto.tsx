@@ -3,7 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Icono from '@/components/Icono'
-import { revisarArchivo, subirConPermiso } from '@/lib/subidaFirmada'
+import { comprimirFoto } from '@/lib/comprimirFoto'
+import { subirConPermiso } from '@/lib/subidaFirmada'
 import { TIPOS_IMAGEN, type TipoImagen } from '@/lib/tipoImagen'
 import { guardarProducto, prepararSubidaFoto, registrarFoto } from '../acciones'
 import { claseChip, type OpcionesFormulario } from '../FormularioProducto'
@@ -33,14 +34,19 @@ export default function AsistenteProducto({ opciones }: { opciones: OpcionesForm
   // liberar la vista previa cuando se cambia la foto o se sale de la pantalla
   useEffect(() => () => { if (foto) URL.revokeObjectURL(foto.vista) }, [foto])
 
+  const [preparando, setPreparando] = useState(false)
+
   async function elegirFoto(archivo: File) {
     setError(null)
-    const revision = await revisarArchivo(archivo)
-    if (!revision.ok) {
-      setError(revision.mensaje)
+    setPreparando(true)
+    // se achica y se pasa a WebP ahora: la vista previa ya es lo que se va a subir
+    const lista = await comprimirFoto(archivo)
+    setPreparando(false)
+    if (!lista.ok) {
+      setError(lista.mensaje)
       return
     }
-    setFoto({ archivo, tipo: revision.tipo, vista: URL.createObjectURL(archivo) })
+    setFoto({ archivo: lista.archivo, tipo: lista.tipo, vista: URL.createObjectURL(lista.archivo) })
   }
 
   const precioNumero = Number(precio.replace(',', '.'))
@@ -121,7 +127,7 @@ export default function AsistenteProducto({ opciones }: { opciones: OpcionesForm
             ) : (
               <span className="flex flex-col items-center gap-2 py-14">
                 <Icono nombre="camara" className="size-12" />
-                <span className="text-lg font-semibold">Tocá para elegir una foto</span>
+                <span className="text-lg font-semibold">{preparando ? 'Preparando la foto…' : 'Tocá para elegir una foto'}</span>
               </span>
             )}
             <input

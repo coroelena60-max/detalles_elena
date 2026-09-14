@@ -16,7 +16,7 @@ Dos aplicaciones independientes sobre una sola base de datos Supabase.
 |---|---|---|---|
 | `catalogo_web/` | Catálogo público. El cliente elige productos, arma el carrito, confirma y se crea el pedido en BD. El código del pedido se manda al WhatsApp de la tienda y la venta se cierra ahí. | 3000 | **En uso** (entran pedidos reales) |
 | `detalles_admin/` | Panel administrativo de la tienda. | 3001 | **Todos los módulos construidos**, falta probarlos con datos reales |
-| `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | 0001–0026 aplicadas en el proyecto real |
+| `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | 0001–0026 aplicadas en el proyecto real; **0027 escrita, falta aplicarla** |
 | `assets/catalogo/` | 33 fotos optimizadas a WebP, ya subidas al bucket `catalogo`. | — | Subidas |
 
 El catálogo y todos los módulos del panel (según el diagrama del dueño: administración,
@@ -154,12 +154,13 @@ Fuente de verdad: `supabase/migrations/`. Probadas contra Postgres 16 local
 | `0024_pedidos_agenda_respaldo.sql` | permisos `pedido.ver/editar` (catálogo) separados de `venta.*` (mostrador) con RLS por `canal` y `exigir_permiso_pedido()` en las RPC; `pedido.fecha_compromiso` + `programar_pedido()` + vista `v_agenda` (minutos de taller); permiso `respaldo.descargar` |
 | `0025_cotizacion_otros_gastos.sql` | `cotizacion_otro` (concepto + monto), varios gastos fijos por cotización; `guardar_cotizacion()` acepta `p.otros` y guarda la suma en `otros_monto` (la vista no cambia); sin `p.otros` usa `otros_monto` como antes |
 | `0026_limites_y_candados.sql` | límite de pedidos del catálogo en la base (trigger en `pedido`, solo rol anon: 5 por cliente/hora, 40 en total/10 min), `marcar_pedido_enviado_whatsapp()` solo 2 h después de creado (los códigos son correlativos), `recalcular_pedido()` sin acceso directo y `recalcular_compra()` con `exigir_permiso` |
+| `0027_devolver_cobro.sql` | `pago.devuelto_at/devuelto_por/motivo_devolucion` (con check: sin motivo no hay devolución), `devolver_cobro(pago_id, motivo)` con `pago.registrar` + permiso de editar el pedido, `v_pedido_saldo` y "cobros por método" de `reporte_ventas_confirmadas` sin los cobros devueltos |
 
 ### Cómo aplicarlas
 
 **En la base real (`nrwamzgxwttgvaqqodfp`) se aplica SOLO la migración nueva**: Supabase →
 SQL Editor → pegar ese único archivo `supabase/migrations/NNNN_...sql` → Run. Nunca todas
-juntas. 0001–0026 ya están aplicadas.
+juntas. 0001–0026 ya están aplicadas; la 0027 está escrita y probada en PGlite, falta aplicarla (el panel ya la usa).
 
 `APLICAR_TODO.sql` **ya no existe** (se borró el 2026-09-13). Esa noche una sesión aplicó
 0023 y 0024 corriendo el archivo completo sobre la base real "para verificar que era
@@ -290,6 +291,8 @@ Decisiones que conviene no re-discutir:
   `registrarFoto()` / `guardarFotoExtra()` validan que la ruta sea la de ese producto/extra y leen los
   primeros bytes del archivo (`lib/fotosServidor.ts` + `lib/tipoImagen.ts`, magic bytes): si no es
   JPG/PNG/WebP/AVIF lo borran. La URL se arma en el servidor, nunca se guarda la que manda el navegador.
+  Antes de pedir el permiso, el navegador pasa la foto por `lib/comprimirFoto.ts`: la achica a 1600 px
+  (800 en extras) y la convierte a WebP (JPG si el navegador no puede). Un PNG de 2 MB queda en ~170 KB.
   Por eso **las cookies de sesión son HttpOnly** (`lib/supabase/cookies.ts`, en `servidor.ts` y
   `proxy.ts`): ya no existe cliente de Supabase con sesión en el navegador; no volver a crearlo.
 - **Fotos de producto** (`productos/acciones.ts`): `borrarFoto()` toma la ruta del archivo
@@ -668,7 +671,12 @@ Pendiente, en orden:
    costeo deje de contar solo la mano de obra.
 4. Probar los módulos del panel con datos reales y ajustar lo que la dueña encuentre.
    0001–0026 aplicadas en el proyecto real (0025 y 0026 el 2026-09-14, cada una sola; los tipos del
-   panel se regeneraron desde la base y coinciden con `database.ts`).
+   panel se regeneraron desde la base y coinciden con `database.ts`). La **0027** (devolver cobro) está
+   escrita y los tipos de `database.ts` se completaron a mano: aplicarla antes de publicar el panel, que
+   ya lee `pago.devuelto_at` (sin ella la ficha de venta no muestra los cobros).
+   Datos de prueba que quedaron en la base real (2026-09-14): PED-00005 (venta de Bs 1 cancelada, con su
+   cobro), PED-00006 (Bs 1 cobrada y entregada; la Malla se repuso con una devolución de inventario) y
+   PRD-002 "PRUEBA panel - borrar" (oculto, sin foto). Se pueden borrar desde el SQL Editor si molestan.
    **Pendiente en Supabase → Authentication** (auditoría 2026-09-14): el registro público está abierto
    (`disable_signup: false`, contradice "no hay registro público") y la contraseña mínima es 6. Cerrar
    el registro (las cuentas se siguen creando con Add user) y subir el mínimo a 10. Además `site_url`

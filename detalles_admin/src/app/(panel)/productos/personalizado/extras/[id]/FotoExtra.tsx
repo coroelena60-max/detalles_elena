@@ -4,7 +4,8 @@ import Image from 'next/image'
 import { useState } from 'react'
 import BotonConfirmar from '@/components/BotonConfirmar'
 import { Aviso } from '@/components/ui'
-import { revisarArchivo, subirConPermiso } from '@/lib/subidaFirmada'
+import { comprimirFoto } from '@/lib/comprimirFoto'
+import { subirConPermiso } from '@/lib/subidaFirmada'
 import { TIPOS_IMAGEN } from '@/lib/tipoImagen'
 import { useAccion } from '@/lib/useAccion'
 import { guardarFotoExtra, prepararSubidaFotoExtra } from '../../../maestro'
@@ -23,16 +24,17 @@ export default function FotoExtra({
 
   async function subir(archivo: File) {
     setAviso(null)
-    // el tipo se mira por el contenido del archivo, no por la extensión
-    const revision = await revisarArchivo(archivo)
-    if (!revision.ok) {
-      setAviso({ ok: false, texto: revision.mensaje })
+    setSubiendo(true)
+    // se ve chica en el armador: 800 px alcanzan
+    const foto = await comprimirFoto(archivo, { ladoMax: 800 })
+    if (!foto.ok) {
+      setSubiendo(false)
+      setAviso({ ok: false, texto: foto.mensaje })
       return
     }
-    setSubiendo(true)
-    const permiso = await prepararSubidaFotoExtra(extraId, revision.tipo)
+    const permiso = await prepararSubidaFotoExtra(extraId, foto.tipo)
     const error = permiso.ok
-      ? await subirConPermiso(permiso.ruta, permiso.token, archivo, revision.tipo)
+      ? await subirConPermiso(permiso.ruta, permiso.token, foto.archivo, foto.tipo)
       : permiso.mensaje
     setSubiendo(false)
     if (error || !permiso.ok) {

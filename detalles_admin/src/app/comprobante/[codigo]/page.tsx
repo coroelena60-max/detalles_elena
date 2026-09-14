@@ -36,7 +36,7 @@ export default async function PaginaComprobante({ params }: { params: Promise<{ 
 
   const [{ data: saldo }, { data: pagos }] = await Promise.all([
     sb.from('v_pedido_saldo').select('total_cobrar, pagado, saldo').eq('id', p.id).maybeSingle(),
-    sb.from('pago').select('monto, metodo, fecha').eq('pedido_id', p.id).order('fecha'),
+    sb.from('pago').select('monto, metodo, fecha').eq('pedido_id', p.id).is('devuelto_at', null).order('fecha'),
   ])
 
   const cliente = p.cliente as { nombre: string; telefono: string } | null

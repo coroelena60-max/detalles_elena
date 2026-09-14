@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import BotonConfirmar from '@/components/BotonConfirmar'
 import Icono from '@/components/Icono'
-import { revisarArchivo, subirConPermiso } from '@/lib/subidaFirmada'
+import { comprimirFoto } from '@/lib/comprimirFoto'
+import { subirConPermiso } from '@/lib/subidaFirmada'
 import { TIPOS_IMAGEN } from '@/lib/tipoImagen'
 import { borrarFoto, marcarFotoPrincipal, prepararSubidaFoto, registrarFoto } from '../acciones'
 
@@ -44,12 +45,12 @@ export default function Fotos({
   }
 
   async function subirFoto(archivo: File) {
-    // el tipo se mira por el contenido del archivo, no por la extensión
-    const revision = await revisarArchivo(archivo)
-    if (!revision.ok) return revision
-    const permiso = await prepararSubidaFoto(productoId, revision.tipo)
+    // se achica y se pasa a WebP antes de subir; el tipo se mira por el contenido
+    const foto = await comprimirFoto(archivo)
+    if (!foto.ok) return foto
+    const permiso = await prepararSubidaFoto(productoId, foto.tipo)
     if (!permiso.ok) return permiso
-    const error = await subirConPermiso(permiso.ruta, permiso.token, archivo, revision.tipo)
+    const error = await subirConPermiso(permiso.ruta, permiso.token, foto.archivo, foto.tipo)
     if (error) return { ok: false, mensaje: error }
     return registrarFoto(productoId, permiso.ruta, nombre)
   }

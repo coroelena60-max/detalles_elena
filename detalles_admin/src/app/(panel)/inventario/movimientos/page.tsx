@@ -8,7 +8,7 @@ import { numero } from '@/lib/formato'
 import { exigirPermiso } from '@/lib/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 
-export const metadata: Metadata = { title: 'Movimientos de stock' }
+export const metadata: Metadata = { title: 'Movimientos' }
 export const dynamic = 'force-dynamic'
 
 const ITEMS = { producto: 'Productos', extra: 'Extras', insumo: 'Materiales' } as const

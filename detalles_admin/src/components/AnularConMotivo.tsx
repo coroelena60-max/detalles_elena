@@ -27,7 +27,7 @@ export default function AnularConMotivo({
         <button
           type="button"
           onClick={() => setAbierto(true)}
-          className="text-xs text-tinta-suave transition hover:text-alerta"
+          className="text-sm text-tinta-suave transition hover:text-alerta"
         >
           {etiqueta}
         </button>
@@ -50,12 +50,12 @@ export default function AnularConMotivo({
         onChange={(e) => setMotivo(e.target.value)}
         placeholder={placeholder}
         aria-label="Motivo"
-        className="campo min-w-0 flex-1 py-1 text-sm focus:campo-foco sm:w-56"
+        className="campo min-w-0 flex-1 focus:campo-foco sm:w-56"
       />
       <button
         type="submit"
         disabled={pendiente || motivo.trim().length < 3}
-        className="rounded-lg bg-alerta px-3 py-1 text-xs font-medium text-white transition disabled:opacity-50"
+        className="min-h-10 rounded-lg bg-alerta px-4 py-2 text-sm font-medium text-white transition disabled:opacity-50"
       >
         {pendiente ? '…' : etiqueta}
       </button>
@@ -63,11 +63,11 @@ export default function AnularConMotivo({
         type="button"
         disabled={pendiente}
         onClick={() => setAbierto(false)}
-        className="text-xs text-tinta-suave hover:text-tinta"
+        className="min-h-10 rounded-lg border border-linea bg-white px-4 py-2 text-sm hover:bg-fondo"
       >
         No
       </button>
-      {aviso && !aviso.ok && <span className="w-full text-xs text-alerta">{aviso.texto}</span>}
+      {aviso && !aviso.ok && <span className="w-full text-sm text-alerta">{aviso.texto}</span>}
     </form>
   )
 }
