@@ -46,7 +46,7 @@ function IconoOjo({ abierto }: { abierto: boolean }) {
   )
 }
 
-export default function FormularioLogin({ volver }: { volver: string }) {
+export default function FormularioLogin({ volver, aviso }: { volver: string; aviso?: string }) {
   const [estado, accion] = useActionState<ResultadoLogin | null, FormData>(
     entrar,
     null,
@@ -62,6 +62,12 @@ export default function FormularioLogin({ volver }: { volver: string }) {
         ❀
       </span>
       <h1 className="mt-4 text-lg font-semibold">Detalles Elena</h1>
+
+      {aviso && !estado && (
+        <p role="status" className="mt-3 rounded-lg bg-rosa-50 px-3 py-2 text-sm text-tinta-suave">
+          {aviso}
+        </p>
+      )}
 
       <input type="hidden" name="volver" value={volver} />
 

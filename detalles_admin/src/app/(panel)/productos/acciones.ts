@@ -2,7 +2,9 @@
 
 import { revalidatePath } from 'next/cache'
 import type { Database } from '@/types/database'
+import { problemaConImagenSubida, trozoSeguro, urlPublica } from '@/lib/fotosServidor'
 import { clienteServidor } from '@/lib/supabase/servidor'
+import { esTipoImagen, TIPOS_IMAGEN } from '@/lib/tipoImagen'
 
 type EstadoPublicacion = Database['public']['Enums']['estado_publicacion']
 
@@ -136,17 +138,53 @@ export async function quitarDeComposicion(
 }
 
 // ---------------------------------------------------------------------------
-// Fotos. El archivo lo sube el navegador directo al Storage; acá solo se
-// registra la fila y se mantiene el orden.
+// Fotos. 1) prepararSubidaFoto: el servidor arma la ruta y pide a Storage un
+// permiso de subida (Storage revisa maestro.editar con la sesión). 2) El
+// navegador sube el archivo con ese permiso. 3) registrarFoto revisa que la ruta
+// sea la de este producto y que el archivo sea de verdad una imagen.
 // ---------------------------------------------------------------------------
+
+const rutaFotoProducto = (codigo: string) =>
+  new RegExp(`^productos/${trozoSeguro(codigo)}-\\d{13}\\.(jpg|png|webp|avif)$`)
+
+async function codigoDeProducto(productoId: number) {
+  const sb = await clienteServidor()
+  const { data } = await sb.from('producto').select('codigo').eq('id', productoId).maybeSingle()
+  return data ? (data.codigo ?? String(productoId)) : null
+}
+
+export async function prepararSubidaFoto(
+  productoId: number,
+  tipo: string,
+): Promise<{ ok: true; ruta: string; token: string } | { ok: false; mensaje: string }> {
+  if (!esTipoImagen(tipo)) return { ok: false, mensaje: 'La foto tiene que ser WebP, JPG, PNG o AVIF.' }
+  const codigo = await codigoDeProducto(productoId)
+  if (!codigo) return { ok: false, mensaje: 'El producto no existe.' }
+
+  const ruta = `productos/${trozoSeguro(codigo)}-${Date.now()}.${TIPOS_IMAGEN[tipo]}`
+  const sb = await clienteServidor()
+  const { data, error } = await sb.storage.from('catalogo').createSignedUploadUrl(ruta)
+  if (error || !data) return { ok: false, mensaje: `No se pudo preparar la subida: ${error?.message ?? 'sin permiso'}` }
+  return { ok: true, ruta: data.path, token: data.token }
+}
 
 export async function registrarFoto(
   productoId: number,
   storagePath: string,
-  url: string,
   alt: string,
 ): Promise<Resultado> {
+  const codigo = await codigoDeProducto(productoId)
+  if (!codigo) return { ok: false, mensaje: 'El producto no existe.' }
+  if (!rutaFotoProducto(codigo).test(storagePath)) {
+    return { ok: false, mensaje: 'La ruta de la foto no corresponde a este producto.' }
+  }
+
   const sb = await clienteServidor()
+  const problema = await problemaConImagenSubida(storagePath)
+  if (problema) {
+    await sb.storage.from('catalogo').remove([storagePath])
+    return { ok: false, mensaje: problema }
+  }
 
   const { data: actuales } = await sb
     .from('producto_imagen')
@@ -157,8 +195,8 @@ export async function registrarFoto(
   const { error } = await sb.from('producto_imagen').insert({
     producto_id: productoId,
     storage_path: storagePath,
-    url,
-    alt: alt.trim() || null,
+    url: urlPublica(storagePath),
+    alt: alt.trim().slice(0, 200) || null,
     orden: Math.max(0, ...lista.map((f) => f.orden)) + 1,
     // si el producto no tiene foto principal, la nueva pasa a serlo
     es_principal: !lista.some((f) => f.es_principal),

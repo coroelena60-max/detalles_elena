@@ -3,28 +3,17 @@
 import Image from 'next/image'
 import { useState } from 'react'
 import { Aviso } from '@/components/ui'
-import { clienteNavegador } from '@/lib/supabase/navegador'
+import { revisarArchivo, subirConPermiso } from '@/lib/subidaFirmada'
+import { TIPOS_IMAGEN } from '@/lib/tipoImagen'
 import { useAccion } from '@/lib/useAccion'
-import { guardarFotoExtra } from '../../../maestro'
-
-const MAX_BYTES = 5 * 1024 * 1024
-const TIPOS = ['image/webp', 'image/jpeg', 'image/png', 'image/avif']
-
-/** Ruta dentro del bucket a partir de la URL pública (para poder borrarla después). */
-function rutaDeUrl(url: string | null): string | null {
-  const marca = '/storage/v1/object/public/catalogo/'
-  const i = url?.indexOf(marca) ?? -1
-  return url && i >= 0 ? url.slice(i + marca.length) : null
-}
+import { guardarFotoExtra, prepararSubidaFotoExtra } from '../../../maestro'
 
 export default function FotoExtra({
   extraId,
-  slug,
   url,
   puedeEditar,
 }: {
   extraId: number
-  slug: string
   url: string | null
   puedeEditar: boolean
 }) {
@@ -33,27 +22,23 @@ export default function FotoExtra({
 
   async function subir(archivo: File) {
     setAviso(null)
-    if (!TIPOS.includes(archivo.type)) {
-      setAviso({ ok: false, texto: 'La foto tiene que ser WebP, JPG, PNG o AVIF.' })
-      return
-    }
-    if (archivo.size > MAX_BYTES) {
-      setAviso({ ok: false, texto: 'La foto pesa más de 5 MB. Comprimila antes de subirla.' })
+    // el tipo se mira por el contenido del archivo, no por la extensión
+    const revision = await revisarArchivo(archivo)
+    if (!revision.ok) {
+      setAviso({ ok: false, texto: revision.mensaje })
       return
     }
     setSubiendo(true)
-    const ext = archivo.name.split('.').pop()?.toLowerCase() ?? 'webp'
-    // prefijo "panel-" = subida desde acá; las fotos originales del seed no se tocan
-    const ruta = `extras/panel-${slug}-${Date.now()}.${ext}`
-    const sb = clienteNavegador()
-    const { error } = await sb.storage.from('catalogo').upload(ruta, archivo, { contentType: archivo.type })
+    const permiso = await prepararSubidaFotoExtra(extraId, revision.tipo)
+    const error = permiso.ok
+      ? await subirConPermiso(permiso.ruta, permiso.token, archivo, revision.tipo)
+      : permiso.mensaje
     setSubiendo(false)
-    if (error) {
-      setAviso({ ok: false, texto: `No se pudo subir: ${error.message}` })
+    if (error || !permiso.ok) {
+      setAviso({ ok: false, texto: error ?? 'No se pudo subir.' })
       return
     }
-    const { data } = sb.storage.from('catalogo').getPublicUrl(ruta)
-    ejecutar(() => guardarFotoExtra(extraId, data.publicUrl, rutaDeUrl(url)))
+    ejecutar(() => guardarFotoExtra(extraId, permiso.ruta))
   }
 
   return (
@@ -72,7 +57,7 @@ export default function FotoExtra({
             {subiendo || pendiente ? 'Subiendo…' : url ? 'Cambiar foto' : 'Subir foto'}
             <input
               type="file"
-              accept={TIPOS.join(',')}
+              accept={Object.keys(TIPOS_IMAGEN).join(',')}
               disabled={subiendo || pendiente}
               className="sr-only"
               onChange={(e) => {
@@ -86,7 +71,7 @@ export default function FotoExtra({
             <button
               type="button"
               disabled={pendiente}
-              onClick={() => ejecutar(() => guardarFotoExtra(extraId, null, rutaDeUrl(url)))}
+              onClick={() => ejecutar(() => guardarFotoExtra(extraId, null))}
               className="text-xs text-tinta-suave hover:text-alerta"
             >
               Quitar

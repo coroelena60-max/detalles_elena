@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { SUPABASE_KEY, SUPABASE_URL } from '@/lib/env'
+import { opcionesCookiesSesion } from '@/lib/supabase/cookies'
 import type { Database } from '@/types/database'
 
 /**
@@ -14,6 +15,7 @@ export async function clienteServidor() {
   const galletas = await cookies()
 
   return createServerClient<Database>(SUPABASE_URL, SUPABASE_KEY, {
+    cookieOptions: opcionesCookiesSesion,
     cookies: {
       getAll() {
         return galletas.getAll()

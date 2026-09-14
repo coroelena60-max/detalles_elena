@@ -16,7 +16,7 @@ Dos aplicaciones independientes sobre una sola base de datos Supabase.
 |---|---|---|---|
 | `catalogo_web/` | Catálogo público. El cliente elige productos, arma el carrito, confirma y se crea el pedido en BD. El código del pedido se manda al WhatsApp de la tienda y la venta se cierra ahí. | 3000 | **En uso** (entran pedidos reales) |
 | `detalles_admin/` | Panel administrativo de la tienda. | 3001 | **Todos los módulos construidos**, falta probarlos con datos reales |
-| `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | 0001–0025 aplicadas en el proyecto real |
+| `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | 0001–0026 aplicadas en el proyecto real |
 | `assets/catalogo/` | 33 fotos optimizadas a WebP, ya subidas al bucket `catalogo`. | — | Subidas |
 
 El catálogo y todos los módulos del panel (según el diagrama del dueño: administración,
@@ -146,12 +146,13 @@ Fuente de verdad: `supabase/migrations/`. Probadas contra Postgres 16 local
 | `0023_cotizacion.sql` | módulo **Cotización**: `cotizacion` + `cotizacion_material` + `cotizacion_extra`, vista `v_cotizacion` (la cuenta), `guardar_cotizacion()`, `convertir_cotizacion_en_producto()`, y `crear_venta_mostrador()` acepta líneas `{"tipo":"cotizacion"}`; permisos `cotizacion.ver/editar` |
 | `0024_pedidos_agenda_respaldo.sql` | permisos `pedido.ver/editar` (catálogo) separados de `venta.*` (mostrador) con RLS por `canal` y `exigir_permiso_pedido()` en las RPC; `pedido.fecha_compromiso` + `programar_pedido()` + vista `v_agenda` (minutos de taller); permiso `respaldo.descargar` |
 | `0025_cotizacion_otros_gastos.sql` | `cotizacion_otro` (concepto + monto), varios gastos fijos por cotización; `guardar_cotizacion()` acepta `p.otros` y guarda la suma en `otros_monto` (la vista no cambia); sin `p.otros` usa `otros_monto` como antes |
+| `0026_limites_y_candados.sql` | límite de pedidos del catálogo en la base (trigger en `pedido`, solo rol anon: 5 por cliente/hora, 40 en total/10 min), `marcar_pedido_enviado_whatsapp()` solo 2 h después de creado (los códigos son correlativos), `recalcular_pedido()` sin acceso directo y `recalcular_compra()` con `exigir_permiso` |
 
 ### Cómo aplicarlas
 
 **En la base real (`nrwamzgxwttgvaqqodfp`) se aplica SOLO la migración nueva**: Supabase →
 SQL Editor → pegar ese único archivo `supabase/migrations/NNNN_...sql` → Run. Nunca todas
-juntas. 0001–0025 ya están aplicadas.
+juntas. 0001–0026 ya están aplicadas.
 
 `APLICAR_TODO.sql` **ya no existe** (se borró el 2026-09-13). Esa noche una sesión aplicó
 0023 y 0024 corriendo el archivo completo sobre la base real "para verificar que era
@@ -276,6 +277,14 @@ Decisiones que conviene no re-discutir:
   slug se genera desde el nombre, y el de foto principal no toca la fila que un
   `on conflict` va a actualizar. Aun así, un seed nuevo sobre `producto` o
   `producto_imagen` tiene que filtrar en el `WHERE` (ver §4, "Re-ejecutarlo…").
+- **Subir fotos sin sesión en el navegador**: `prepararSubidaFoto()` / `prepararSubidaFotoExtra()` arman la
+  ruta en el servidor y piden a Storage un permiso firmado (`createSignedUploadUrl`, que exige
+  `maestro.editar`); el navegador sube con `lib/subidaFirmada.ts` (cliente sin sesión); y
+  `registrarFoto()` / `guardarFotoExtra()` validan que la ruta sea la de ese producto/extra y leen los
+  primeros bytes del archivo (`lib/fotosServidor.ts` + `lib/tipoImagen.ts`, magic bytes): si no es
+  JPG/PNG/WebP/AVIF lo borran. La URL se arma en el servidor, nunca se guarda la que manda el navegador.
+  Por eso **las cookies de sesión son HttpOnly** (`lib/supabase/cookies.ts`, en `servidor.ts` y
+  `proxy.ts`): ya no existe cliente de Supabase con sesión en el navegador; no volver a crearlo.
 - **Fotos de producto** (`productos/acciones.ts`): `borrarFoto()` toma la ruta del archivo
   de la fila borrada (no del navegador), avisa si RLS no borró nada o si el bucket falla, y
   si era la principal pasa la marca a la siguiente; `registrarFoto()` marca la nueva como
@@ -392,7 +401,7 @@ Construido sobre el mismo Supabase, pero con sesión: el panel usa la clave publ
 
 | Archivo | Para qué |
 |---|---|
-| `src/proxy.ts` | Refresca la sesión en cada request y manda al login si no hay. En Next 16 esto reemplaza a `middleware.ts` (mismo archivo, función `proxy`). |
+| `src/proxy.ts` | Refresca la sesión en cada request, manda al login si no hay y **vence la sesión** (ver abajo). En Next 16 esto reemplaza a `middleware.ts` (mismo archivo, función `proxy`). Para `/api/*` responde 401 JSON en vez de redirigir. |
 | `src/lib/supabase/servidor.ts` | Cliente para Server Components y server actions, con las cookies de la sesión. |
 | `src/lib/sesion.ts` | `obtenerSesion()` (perfil + permisos vía la RPC `mis_permisos`), `exigirSesion()` y `exigirPermiso('venta.ver')`. |
 | `src/lib/estados.ts` | Etiquetas y colores de cada estado, el siguiente paso natural del pedido. (El mapa de módulos y sus permisos está en `src/lib/modulos.ts`.) |
@@ -408,6 +417,21 @@ Reglas del panel:
   `cambiar_estado_pedido()` (que al entregar descuenta inventario y escribe la bitácora),
   `registrar_pago()`, `recibir_compra()`, `producir_extra()`. El panel no calcula montos
   ni estados a mano, igual que el catálogo.
+- **La sesión vence** (`src/lib/limitesSesion.ts`): Supabase deja las cookies 400 días y las renueva
+  solas, así que sin esto la sesión no terminaba nunca. `proxy.ts` cierra con
+  `signOut({ scope: 'local' })` tras **4 h sin actividad** o **12 h desde el login**, y manda a
+  `/login?motivo=inactividad|vencida`. El inicio sale del `amr` del token (firmado por Supabase;
+  respaldo: cookie `panel_inicio` que pone `entrar()`); la actividad, de la cookie `panel_actividad`,
+  que se renueva en cada request **salvo el sondeo** `/api/pedidos/pendientes` (si no, una pestaña
+  abierta la mantendría viva). Cuando el sondeo recibe 401, `Navegacion` manda al login.
+- **Login**: `lib/limiteIntentos.ts` frena 5 fallos por IP+correo y 30 intentos por IP cada 15 min (en
+  memoria: freno, no muralla; la muralla es el límite por IP de Supabase Auth). `lib/destinoSeguro.ts`
+  valida el `volver` (`//sitio.com` era un redirect abierto).
+- **Headers de seguridad** en `next.config.ts` de las dos apps: CSP (scripts solo del propio dominio,
+  `frame-ancestors 'none'`, `form-action 'self'`, imágenes y conexiones solo a Supabase), nosniff,
+  X-Frame-Options, Referrer-Policy, Permissions-Policy y HSTS; el panel además `noindex`. Si se suma un
+  servicio externo (fuentes, analítica, otro dominio de imágenes) hay que agregarlo a la CSP.
+- **Exportar a Excel**: `celda()` antepone `'` a los textos que empiezan con `= + - @` (inyección de fórmulas).
 - **No hay registro público.** Las cuentas se crean en Supabase (Authentication → Add
   user) y se les asigna rol con `select public.asignar_rol('correo','admin')`. El primer
   admin se nombra así por única vez; de ahí en más los roles se dan desde `/usuarios`.
@@ -591,8 +615,12 @@ Pendiente, en orden:
 3. **Cargar insumos, proveedores y recetas** desde el panel (o por seed) para que el
    costeo deje de contar solo la mano de obra.
 4. Probar los módulos del panel con datos reales y ajustar lo que la dueña encuentre.
-   0001–0025 aplicadas en el proyecto real (0025 el 2026-09-14, sola; los tipos del panel se
-   regeneraron desde la base y coinciden con `database.ts`).
+   0001–0026 aplicadas en el proyecto real (0025 y 0026 el 2026-09-14, cada una sola; los tipos del
+   panel se regeneraron desde la base y coinciden con `database.ts`).
+   **Pendiente en Supabase → Authentication** (auditoría 2026-09-14): el registro público está abierto
+   (`disable_signup: false`, contradice "no hay registro público") y la contraseña mínima es 6. Cerrar
+   el registro (las cuentas se siguen creando con Add user) y subir el mínimo a 10. Además `site_url`
+   quedó en `http://localhost:3000`.
    Para sumar a Elena: crear su cuenta en Supabase (Authentication → Add user) y darle
    el rol desde `/usuarios`; el SQL Editor ya no hace falta.
 5. Tipos de la BD: `catalogo_web/src/types/database.ts` sigue escrito a mano y

@@ -3,8 +3,9 @@
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
-import { clienteNavegador } from '@/lib/supabase/navegador'
-import { borrarFoto, marcarFotoPrincipal, registrarFoto } from '../acciones'
+import { revisarArchivo, subirConPermiso } from '@/lib/subidaFirmada'
+import { TIPOS_IMAGEN } from '@/lib/tipoImagen'
+import { borrarFoto, marcarFotoPrincipal, prepararSubidaFoto, registrarFoto } from '../acciones'
 
 export interface Foto {
   id: number
@@ -15,18 +16,13 @@ export interface Foto {
   orden: number
 }
 
-const MAX_BYTES = 5 * 1024 * 1024 // el bucket rechaza más de 5 MB
-const TIPOS = ['image/webp', 'image/jpeg', 'image/png', 'image/avif']
-
 export default function Fotos({
   productoId,
-  codigo,
   nombre,
   fotos,
   puedeEditar,
 }: {
   productoId: number
-  codigo: string
   nombre: string
   fotos: Foto[]
   puedeEditar: boolean
@@ -38,39 +34,22 @@ export default function Fotos({
 
   async function subir(archivo: File) {
     setAviso(null)
-
-    if (!TIPOS.includes(archivo.type)) {
-      setAviso({ ok: false, texto: 'La foto tiene que ser WebP, JPG, PNG o AVIF.' })
-      return
-    }
-    if (archivo.size > MAX_BYTES) {
-      setAviso({ ok: false, texto: 'La foto pesa más de 5 MB. Comprimila antes de subirla.' })
-      return
-    }
-
     setSubiendo(true)
-    const extension = archivo.name.split('.').pop()?.toLowerCase() ?? 'webp'
-    const ruta = `productos/${codigo.toLowerCase()}-${Date.now()}.${extension}`
-
-    const sb = clienteNavegador()
-    const { error } = await sb.storage
-      .from('catalogo')
-      .upload(ruta, archivo, { contentType: archivo.type, upsert: false })
-
-    if (error) {
-      setSubiendo(false)
-      setAviso({ ok: false, texto: `No se pudo subir: ${error.message}` })
-      return
-    }
-
-    const {
-      data: { publicUrl },
-    } = sb.storage.from('catalogo').getPublicUrl(ruta)
-
-    const r = await registrarFoto(productoId, ruta, publicUrl, nombre)
+    const r = await subirFoto(archivo)
     setSubiendo(false)
     setAviso({ ok: r.ok, texto: r.mensaje })
     if (r.ok) router.refresh()
+  }
+
+  async function subirFoto(archivo: File) {
+    // el tipo se mira por el contenido del archivo, no por la extensión
+    const revision = await revisarArchivo(archivo)
+    if (!revision.ok) return revision
+    const permiso = await prepararSubidaFoto(productoId, revision.tipo)
+    if (!permiso.ok) return permiso
+    const error = await subirConPermiso(permiso.ruta, permiso.token, archivo, revision.tipo)
+    if (error) return { ok: false, mensaje: error }
+    return registrarFoto(productoId, permiso.ruta, nombre)
   }
 
   function principal(imagenId: number) {
@@ -161,7 +140,7 @@ export default function Fotos({
           {subiendo ? 'Subiendo…' : 'Agregar una foto'}
           <input
             type="file"
-            accept="image/webp,image/jpeg,image/png,image/avif"
+            accept={Object.keys(TIPOS_IMAGEN).join(',')}
             disabled={ocupado}
             onChange={(e) => {
               const archivo = e.target.files?.[0]

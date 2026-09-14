@@ -108,7 +108,7 @@ export default async function PaginaExtra({ params }: { params: Promise<{ id: st
             </p>
           </section>
 
-          <FotoExtra extraId={extra.id} slug={extra.slug} url={extra.imagen_url} puedeEditar={puedeEditar} />
+          <FotoExtra extraId={extra.id} url={extra.imagen_url} puedeEditar={puedeEditar} />
 
           <section className="tarjeta p-4">
             <h2 className="text-sm font-semibold">Ramos que la llevan</h2>

@@ -178,7 +178,6 @@ export default async function PaginaProducto({
 
           <Fotos
             productoId={producto.id}
-            codigo={producto.codigo ?? String(producto.id)}
             nombre={producto.nombre}
             fotos={(fotos ?? []) as Foto[]}
             puedeEditar={puedeEditar}

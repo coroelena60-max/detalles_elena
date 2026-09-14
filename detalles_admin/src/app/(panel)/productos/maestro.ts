@@ -3,7 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import { numeroDe, traducirError } from '@/lib/acciones'
 import type { EstadoPublicacion } from '@/lib/estados'
+import { problemaConImagenSubida, rutaDeUrl, trozoSeguro, urlPublica } from '@/lib/fotosServidor'
 import { clienteServidor } from '@/lib/supabase/servidor'
+import { esTipoImagen, TIPOS_IMAGEN } from '@/lib/tipoImagen'
 
 /**
  * Acciones del maestro que no son el producto en sí: categorías, extras,
@@ -118,17 +120,49 @@ export async function guardarExtra(d: DatosExtra): Promise<Resultado & { id?: nu
   return { ok: true, id: data.id, mensaje: 'Extra creado.' }
 }
 
-export async function guardarFotoExtra(id: number, url: string | null, rutaAnterior: string | null): Promise<Resultado> {
+/** Permiso de subida para la foto de un extra (Storage revisa maestro.editar). */
+export async function prepararSubidaFotoExtra(
+  id: number,
+  tipo: string,
+): Promise<{ ok: true; ruta: string; token: string } | { ok: false; mensaje: string }> {
+  if (!esTipoImagen(tipo)) return { ok: false, mensaje: 'La foto tiene que ser WebP, JPG, PNG o AVIF.' }
   const sb = await clienteServidor()
-  const { error } = await sb.from('extra').update({ imagen_url: url }).eq('id', id)
+  const { data: extra } = await sb.from('extra').select('slug').eq('id', id).maybeSingle()
+  if (!extra) return { ok: false, mensaje: 'El extra no existe.' }
+  // prefijo "panel-" = subida desde acá; las fotos originales del seed no se tocan
+  const ruta = `extras/panel-${trozoSeguro(extra.slug)}-${Date.now()}.${TIPOS_IMAGEN[tipo]}`
+  const { data, error } = await sb.storage.from('catalogo').createSignedUploadUrl(ruta)
+  if (error || !data) return { ok: false, mensaje: `No se pudo preparar la subida: ${error?.message ?? 'sin permiso'}` }
+  return { ok: true, ruta: data.path, token: data.token }
+}
+
+/** ruta = la que devolvió prepararSubidaFotoExtra, o null para quitar la foto. */
+export async function guardarFotoExtra(id: number, ruta: string | null): Promise<Resultado> {
+  const sb = await clienteServidor()
+  const { data: extra } = await sb.from('extra').select('slug, imagen_url').eq('id', id).maybeSingle()
+  if (!extra) return { ok: false, mensaje: 'El extra no existe.' }
+
+  if (ruta !== null) {
+    const esperada = new RegExp(`^extras/panel-${trozoSeguro(extra.slug)}-\\d{13}\\.(jpg|png|webp|avif)$`)
+    if (!esperada.test(ruta)) return { ok: false, mensaje: 'La ruta de la foto no corresponde a este extra.' }
+    const problema = await problemaConImagenSubida(ruta)
+    if (problema) {
+      await sb.storage.from('catalogo').remove([ruta])
+      return { ok: false, mensaje: problema }
+    }
+  }
+
+  const { error } = await sb.from('extra').update({ imagen_url: ruta ? urlPublica(ruta) : null }).eq('id', id)
   if (error) return { ok: false, mensaje: traducirError(error.message) }
   // si la foto vieja la subió el panel, se borra del bucket para no dejar basura
-  if (rutaAnterior?.startsWith('extras/panel-')) {
+  // (la ruta vieja sale de la base, no del navegador)
+  const rutaAnterior = rutaDeUrl(extra.imagen_url)
+  if (rutaAnterior?.startsWith('extras/panel-') && rutaAnterior !== ruta) {
     await sb.storage.from('catalogo').remove([rutaAnterior])
   }
   refrescarCatalogo()
   revalidatePath(`/productos/personalizado/extras/${id}`)
-  return { ok: true, mensaje: url ? 'Foto actualizada.' : 'Foto quitada.' }
+  return { ok: true, mensaje: ruta ? 'Foto actualizada.' : 'Foto quitada.' }
 }
 
 // ---------------------------------------------------------------------------

@@ -16,7 +16,9 @@ type Hoja = { titulo: string; columnas: string[]; filas: Celda[][] }
 function celda(v: Celda): string {
   if (v === null || v === undefined) return ''
   if (typeof v === 'number') return String(Math.round(v * 100) / 100).replace('.', ',')
-  const t = String(v)
+  // un texto que empieza con = + - @ Excel lo ejecuta como fórmula (el nombre de
+  // un cliente del catálogo podría ser "=HYPERLINK(...)"): se lo marca como texto
+  const t = /^[=+\-@\t\r]/.test(String(v)) ? `'${String(v)}` : String(v)
   return /[";\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t
 }
 

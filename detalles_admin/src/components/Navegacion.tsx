@@ -53,6 +53,13 @@ export default function Navegacion({
       if (document.visibilityState === 'hidden' && ultimoVisto.current !== null) return
       try {
         const r = await fetch('/api/pedidos/pendientes', { cache: 'no-store' })
+        if (r.status === 401) {
+          // la sesión venció con la pestaña abierta: al login, sin dejar datos a la vista
+          const { motivo } = (await r.json().catch(() => ({}))) as { motivo?: string }
+          const volver = encodeURIComponent(window.location.pathname)
+          router.replace(`/login?volver=${volver}${motivo ? `&motivo=${motivo}` : ''}`)
+          return
+        }
         if (!r.ok || !r.headers.get('content-type')?.includes('json')) return
         const d = (await r.json()) as Estado
         if (!vivo) return
