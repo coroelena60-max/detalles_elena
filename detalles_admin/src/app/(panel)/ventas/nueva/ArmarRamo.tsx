@@ -98,14 +98,14 @@ export default function ArmarRamo({
 
   return (
     <div>
-      <p className="text-sm font-semibold">1. Envoltorio</p>
+      <p className="font-semibold">1. Elegí el envoltorio</p>
       {envoltorios.length === 0 ? (
-        <p className="mt-2 text-sm text-tinta-suave">No hay envoltorios activos. Cargalos en Productos → Producto personalizado.</p>
+        <p className="mt-2 text-sm text-tinta-suave">No hay envoltorios cargados.</p>
       ) : (
         <div className="mt-2 space-y-2">
           {estilos.map((estilo) => (
             <div key={estilo} className="flex flex-wrap items-center gap-1.5">
-              <span className="w-20 shrink-0 text-xs text-tinta-suave">{estilo}</span>
+              <span className="w-24 shrink-0 text-sm text-tinta-suave">{estilo}</span>
               {envoltorios
                 .filter((e) => e.estilo === estilo)
                 .map((e) => (
@@ -114,8 +114,8 @@ export default function ArmarRamo({
                     type="button"
                     onClick={() => elegirEnvoltorio(e.id)}
                     aria-pressed={e.id === envId}
-                    title={e.capacidad === null ? 'Sin límite de espacios' : `Entran ${numero(e.capacidad)} espacios`}
-                    className={`rounded-lg border px-2.5 py-1.5 text-xs transition ${
+                    title={e.capacidad === null ? 'Sin límite' : `Entran ${numero(e.capacidad)} lugares`}
+                    className={`min-h-11 rounded-lg border-2 px-3 py-1.5 text-sm transition ${
                       e.id === envId
                         ? 'border-rosa-600 bg-rosa-600 text-white'
                         : 'border-linea bg-white hover:border-rosa-300'
@@ -133,15 +133,15 @@ export default function ArmarRamo({
       {env && (
         <>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm font-semibold">2. Extras</p>
-            <span className="text-xs text-tinta-suave">
+            <p className="font-semibold">2. Agregá flores y extras</p>
+            <span className="text-sm text-tinta-suave">
               {capacidad === null
-                ? `${numero(usados)} espacios usados`
-                : `${numero(usados)} de ${numero(capacidad)} espacios`}
+                ? `${numero(usados)} lugares usados`
+                : `Lleno: ${numero(usados)} de ${numero(capacidad)} lugares`}
             </span>
           </div>
           {capacidad !== null && (
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-rosa-50">
+            <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-rosa-50">
               <div
                 className={`h-full rounded-full ${usados >= capacidad ? 'bg-alerta' : 'bg-rosa-500'}`}
                 style={{ width: `${Math.min(100, (usados / capacidad) * 100)}%` }}
@@ -153,7 +153,7 @@ export default function ArmarRamo({
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar un extra…"
             aria-label="Buscar un extra para el ramo"
-            className="campo mt-2 py-1.5 text-sm focus:campo-foco"
+            className="campo mt-2 focus:campo-foco"
           />
           <ul className="mt-2 max-h-80 divide-y divide-linea overflow-y-auto">
             {visibles.map((e) => {
@@ -164,12 +164,12 @@ export default function ArmarRamo({
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm">{e.nombre}</p>
                     <p className="text-xs text-tinta-suave">
-                      {bs(e.precio)} · {numero(e.espacios)} esp.
+                      {bs(e.precio)} · ocupa {numero(e.espacios)}
                     </p>
                   </div>
                   {c > 0 && (
                     <>
-                      <button type="button" onClick={() => cambiar(e.id, -1)} aria-label={`Quitar ${e.nombre}`} className="grid size-8 place-items-center rounded-full border border-linea text-lg leading-none">−</button>
+                      <button type="button" onClick={() => cambiar(e.id, -1)} aria-label={`Quitar ${e.nombre}`} className="grid size-10 place-items-center rounded-full border border-linea text-xl leading-none">−</button>
                       <span className="w-6 text-center text-sm font-medium tabular-nums">{c}</span>
                     </>
                   )}
@@ -178,8 +178,8 @@ export default function ArmarRamo({
                     onClick={() => cambiar(e.id, 1)}
                     disabled={!cabe(e)}
                     aria-label={`Agregar ${e.nombre}`}
-                    title={cabe(e) ? undefined : 'Ya no entra en este tamaño'}
-                    className="grid size-8 place-items-center rounded-full border border-rosa-300 text-lg leading-none text-rosa-700 hover:bg-rosa-50 disabled:opacity-30"
+                    title={cabe(e) ? undefined : 'Ya no entra: elegí un envoltorio más grande'}
+                    className="grid size-10 place-items-center rounded-full border border-rosa-300 text-xl leading-none text-rosa-700 hover:bg-rosa-50 disabled:opacity-30"
                   >
                     +
                   </button>

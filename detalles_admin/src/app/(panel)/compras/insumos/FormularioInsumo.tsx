@@ -44,11 +44,10 @@ export default function FormularioInsumo({
       }}
       className="tarjeta p-4"
     >
-      <h2 className="text-sm font-semibold">{nuevo ? 'Nuevo insumo' : 'Datos del insumo'}</h2>
+      <h2 className="text-sm font-semibold">{nuevo ? 'Nuevo material' : 'Datos del material'}</h2>
       {nuevo && (
         <p className="mt-1 text-xs text-tinta-suave">
-          Materia prima que se compra y se consume: papel coreano, cinta, alambre, foamy, cajas.
-          No se vende suelta.
+          Papel, cinta, alambre, cajas: lo que se usa para armar.
         </p>
       )}
 
@@ -98,7 +97,7 @@ export default function FormularioInsumo({
       {puedeEditar && (
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button type="submit" disabled={pendiente} className={BOTON}>
-            {pendiente ? 'Guardando…' : nuevo ? 'Crear insumo' : 'Guardar'}
+            {pendiente ? 'Guardando…' : nuevo ? 'Crear material' : 'Guardar'}
           </button>
           {alCancelar && (
             <button type="button" onClick={alCancelar} className={BOTON_SECUNDARIO}>

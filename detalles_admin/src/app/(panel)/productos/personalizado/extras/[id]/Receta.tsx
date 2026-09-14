@@ -38,9 +38,9 @@ export default function Receta({
 
   return (
     <section className="tarjeta p-4">
-      <h2 className="text-sm font-semibold">Receta: qué insumos lleva una unidad</h2>
+      <h2 className="text-sm font-semibold">Qué materiales lleva cada una</h2>
       <p className="mt-1 text-xs text-tinta-suave">
-        Con esto se calcula el costo, y al producir desde Inventario se descuentan estos insumos.
+        Con esto se calcula el costo.
       </p>
 
       {ingredientes.length === 0 ? (
@@ -106,7 +106,7 @@ export default function Receta({
           className="mt-3 flex flex-wrap items-end gap-2 border-t border-linea pt-3"
         >
           <div className="min-w-44 flex-1">
-            <label htmlFor="r-ins" className="block text-xs font-medium">Agregar insumo</label>
+            <label htmlFor="r-ins" className="block text-sm font-medium">Agregar material</label>
             <select id="r-ins" required value={insumoId || ''} onChange={(e) => setInsumoId(Number(e.target.value))} className={CAMPO}>
               <option value="" disabled>Elegí…</option>
               {disponibles.map((i) => (

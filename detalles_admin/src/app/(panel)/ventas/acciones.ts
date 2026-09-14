@@ -88,7 +88,7 @@ export async function crearVentaMostrador(
   cliente: { nombre: string; telefono: string; email: string } | null,
   lineas: LineaMostrador[],
   nota: string,
-): Promise<Resultado & { codigo?: string }> {
+): Promise<Resultado & { codigo?: string; id?: number; total?: number }> {
   // null = venta sin cliente: la base la cuelga del cliente genérico S/N
   const telefono = cliente?.telefono.replace(/\D/g, '') ?? ''
   if (cliente) {
@@ -126,10 +126,54 @@ export async function crearVentaMostrador(
   })
   if (error) return { ok: false, mensaje: traducirError(error.message) }
 
-  const codigo = (data as { codigo?: string } | null)?.codigo
+  const venta = data as { id?: number; codigo?: string; total?: number } | null
+  const codigo = venta?.codigo
   revalidatePath('/ventas')
   revalidatePath('/')
-  return { ok: true, codigo, mensaje: `Venta ${codigo ?? ''} registrada.` }
+  return { ok: true, codigo, id: venta?.id, total: venta?.total, mensaje: `Venta ${codigo ?? ''} registrada.` }
+}
+
+/**
+ * La venta de mostrador de un solo botón: registra la venta y, según lo que se
+ * eligió, cobra el total y la da por entregada. Son las mismas tres funciones
+ * de la base de siempre, una detrás de otra (el total lo pone la base, no el
+ * navegador). Si falla un paso después de crear la venta, la venta queda
+ * hecha y se avisa qué faltó, para terminarlo desde su ficha.
+ */
+export async function venderEnMostrador(
+  cliente: { nombre: string; telefono: string; email: string } | null,
+  lineas: LineaMostrador[],
+  nota: string,
+  opciones: { metodo: MetodoPago | null; entregar: boolean },
+): Promise<Resultado & { codigo?: string; total?: number }> {
+  const creada = await crearVentaMostrador(cliente, lineas, nota)
+  if (!creada.ok || !creada.id || !creada.codigo) return creada
+
+  const { codigo, id, total } = creada
+  const sb = await clienteServidor()
+  const faltas: string[] = []
+
+  if (opciones.metodo && Number(total) > 0) {
+    const { error } = await sb.rpc('registrar_pago', {
+      p_pedido_id: id,
+      p_monto: Number(total),
+      p_metodo: opciones.metodo,
+    })
+    if (error) faltas.push(`no se pudo anotar el cobro (${traducirError(error.message)})`)
+  }
+
+  if (opciones.entregar) {
+    const { error } = await sb.rpc('cambiar_estado_pedido', { p_pedido_id: id, p_estado: 'entregado' })
+    if (error) faltas.push(`no se pudo marcar como entregada (${traducirError(error.message)})`)
+  }
+
+  revalidatePath('/ventas')
+  revalidatePath(`/ventas/${codigo}`)
+  revalidatePath('/')
+  if (faltas.length > 0) {
+    return { ok: false, codigo, total, mensaje: `La venta ${codigo} quedó registrada, pero ${faltas.join(' y ')}. Abrila para terminar.` }
+  }
+  return { ok: true, codigo, total, mensaje: `Venta ${codigo} registrada.` }
 }
 
 // ---------------------------------------------------------------------------

@@ -49,7 +49,7 @@ export default async function PaginaCompras({
     <div>
       <Encabezado
         titulo="Compras"
-        descripcion="Insumos que entran a la tienda. Una compra se carga como borrador y se recibe cuando llega la mercadería."
+        descripcion="Materiales que se compran. Cuando llegan, se marcan como recibidos."
         modulo="compra"
         permisos={sesion.permisos}
       >

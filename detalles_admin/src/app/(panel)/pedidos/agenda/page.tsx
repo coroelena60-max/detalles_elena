@@ -10,7 +10,7 @@ import { bs, numero } from '@/lib/formato'
 import { exigirSesion } from '@/lib/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 
-export const metadata: Metadata = { title: 'Agenda de entregas' }
+export const metadata: Metadata = { title: 'Agenda' }
 export const dynamic = 'force-dynamic'
 
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
@@ -95,8 +95,8 @@ export default async function PaginaAgenda({
   return (
     <div>
       <Encabezado
-        titulo="Agenda de entregas"
-        descripcion="Qué hay que tener listo cada día y cuánto trabajo de taller suma, contra la capacidad del día."
+        titulo="Agenda"
+        descripcion="Qué hay que tener listo cada día."
         modulo="pedido"
         permisos={sesion.permisos}
       >
@@ -121,7 +121,7 @@ export default async function PaginaAgenda({
       {(atrasados.data ?? []).length > 0 && (
         <section className="tarjeta mt-4 border-alerta p-4">
           <h2 className="text-sm font-semibold text-alerta">Atrasados ({atrasados.data!.length})</h2>
-          <p className="text-xs text-tinta-suave">Tenían fecha anterior a hoy y todavía no se entregaron.</p>
+          <p className="text-xs text-tinta-suave">Se pasaron de fecha.</p>
           <ul className="mt-2 grid gap-2 md:grid-cols-2">
             {atrasados.data!.map((p) => (
               <Tarjeta key={p.id} p={p} conFecha />
@@ -155,7 +155,7 @@ export default async function PaginaAgenda({
                   style={{ width: `${Math.min(100, pct)}%` }}
                 />
               </div>
-              {pct > 100 && <p className="mt-1 text-xs text-alerta">Se pasa de la capacidad del taller: conviene mover algo.</p>}
+              {pct > 100 && <p className="mt-1 text-xs text-alerta">Demasiado trabajo para un día.</p>}
               {pedidos.length === 0 ? (
                 <p className="mt-3 text-xs text-tinta-suave">Libre.</p>
               ) : (
@@ -172,7 +172,7 @@ export default async function PaginaAgenda({
 
       <section className="tarjeta mt-6 p-4">
         <h2 className="text-sm font-semibold">Sin fecha ({(sinFecha.data ?? []).length})</h2>
-        <p className="text-xs text-tinta-suave">Pedidos y ventas activos que todavía no tienen día de entrega. Poneles fecha para que entren en la agenda.</p>
+        <p className="text-sm text-tinta-suave">Poneles fecha para verlos en la agenda.</p>
         {(sinFecha.data ?? []).length === 0 ? (
           <p className="mt-2 text-sm text-tinta-suave">Todo está agendado.</p>
         ) : (

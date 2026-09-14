@@ -91,10 +91,7 @@ export default function DatosRol({
               className="size-4 accent-rosa-600"
             />
             En uso
-            <span className="text-xs text-tinta-suave">
-              — si lo apagás, quien lo tenga deja de recibir sus permisos, pero no pierde
-              el rol
-            </span>
+            <span className="text-sm text-tinta-suave">— apagado no da permisos</span>
           </label>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -149,9 +146,8 @@ export default function DatosRol({
       )}
 
       {esSistema && (
-        <p className="mt-3 text-xs text-tinta-suave">
-          Es un rol de sistema: se le pueden cambiar el nombre y los permisos, pero no se
-          borra.
+        <p className="mt-3 text-sm text-tinta-suave">
+          Este rol no se puede borrar.
         </p>
       )}
 

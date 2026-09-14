@@ -120,9 +120,8 @@ export default async function PaginaUsuario({
                 <dd>{persona.permisos ?? 0}</dd>
               </div>
             </dl>
-            <p className="mt-3 text-xs text-tinta-suave">
-              La contraseña la maneja Supabase: desde el panel no se ve ni se cambia. Si la
-              perdió, se le manda un correo de recuperación desde el login.
+            <p className="mt-3 text-sm text-tinta-suave">
+              Si olvidó la contraseña, la recupera desde la pantalla de entrada.
             </p>
           </section>
 

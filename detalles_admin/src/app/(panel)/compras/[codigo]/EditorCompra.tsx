@@ -118,12 +118,12 @@ export default function EditorCompra({
       <section className="tarjeta overflow-x-auto">
         <h2 className="px-4 pt-4 text-sm font-semibold">Qué se compró</h2>
         {items.length === 0 ? (
-          <p className="px-4 pb-2 pt-2 text-sm text-tinta-suave">Todavía no cargaste ningún insumo.</p>
+          <p className="px-4 pb-2 pt-2 text-sm text-tinta-suave">Todavía no cargaste ningún material.</p>
         ) : (
           <table className="mt-2 w-full min-w-[520px] text-sm">
             <thead className="border-y border-linea bg-fondo text-left text-xs uppercase tracking-wide text-tinta-suave">
               <tr>
-                <th className="px-4 py-2 font-medium">Insumo</th>
+                <th className="px-4 py-2 font-medium">Material</th>
                 <th className="px-4 py-2 text-right font-medium">Cantidad</th>
                 <th className="px-4 py-2 text-right font-medium">Costo unit.</th>
                 <th className="px-4 py-2 text-right font-medium">Subtotal</th>
@@ -175,7 +175,7 @@ export default function EditorCompra({
             className="flex flex-wrap items-end gap-2 border-t border-linea p-4"
           >
             <div className="min-w-48 flex-[2]">
-              <label htmlFor="it-ins" className="block text-xs font-medium">Insumo</label>
+              <label htmlFor="it-ins" className="block text-sm font-medium">Material</label>
               <select
                 id="it-ins"
                 required
@@ -210,7 +210,7 @@ export default function EditorCompra({
               Agregar
             </button>
             {insumos.length === 0 && (
-              <p className="w-full text-xs text-tinta-suave">Primero cargá los insumos en la pestaña Insumos.</p>
+              <p className="w-full text-xs text-tinta-suave">Primero cargá los materiales en la pestaña Materiales.</p>
             )}
           </form>
         )}
@@ -239,7 +239,7 @@ export default function EditorCompra({
           <div className="text-sm">
             <p className="font-medium">¿Llegó la mercadería?</p>
             <p className="text-xs text-tinta-suave">
-              Al recibirla, los insumos entran al stock y se recalcula su costo. Después ya no se edita.
+              Al recibirla entra al stock y ya no se puede cambiar.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">

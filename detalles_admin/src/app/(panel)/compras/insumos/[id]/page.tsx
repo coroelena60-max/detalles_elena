@@ -8,7 +8,7 @@ import { exigirPermiso } from '@/lib/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import FormularioInsumo from '../FormularioInsumo'
 
-export const metadata: Metadata = { title: 'Insumo' }
+export const metadata: Metadata = { title: 'Material' }
 export const dynamic = 'force-dynamic'
 
 export default async function PaginaInsumo({ params }: { params: Promise<{ id: string }> }) {
@@ -74,7 +74,7 @@ export default async function PaginaInsumo({ params }: { params: Promise<{ id: s
             <h2 className="px-4 pt-4 text-sm font-semibold">Últimos movimientos</h2>
             {(kardex ?? []).length === 0 ? (
               <p className="px-4 pb-4 pt-2 text-sm text-tinta-suave">
-                Todavía no se movió. Entra con una compra recibida y sale al producir flores.
+                Todavía no tiene movimientos.
               </p>
             ) : (
               <table className="mt-2 w-full min-w-[480px] text-sm">
@@ -104,8 +104,7 @@ export default async function PaginaInsumo({ params }: { params: Promise<{ id: s
           <h2 className="text-sm font-semibold">Dónde se usa</h2>
           {(recetas ?? []).length === 0 ? (
             <p className="mt-2 text-sm text-tinta-suave">
-              En ninguna receta todavía. Sumalo a la receta de una flor desde Productos → Producto
-              personalizado.
+              Todavía no se usa en ninguna flor.
             </p>
           ) : (
             <ul className="mt-2 space-y-1 text-sm">

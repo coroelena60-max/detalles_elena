@@ -45,14 +45,11 @@ export default function RolesDePersona({
   return (
     <section className="tarjeta p-4">
       <h2 className="text-sm font-semibold">Roles</h2>
-      <p className="mt-1 text-xs text-tinta-suave">
-        Los permisos no se dan de a uno: se dan con el rol. Si hace falta una combinación
-        distinta, se crea un rol nuevo.
-      </p>
+      
 
       {roles.length === 0 ? (
         <p className="mt-3 text-sm text-tinta-suave">
-          No podemos mostrar los roles: tu cuenta no tiene permiso para verlos.
+          No tenés permiso para ver los roles.
         </p>
       ) : (
         <ul className="mt-3 divide-y divide-linea">
@@ -91,9 +88,8 @@ export default function RolesDePersona({
       )}
 
       {esYo && (
-        <p className="mt-3 text-xs text-tinta-suave">
-          Sacarte el rol de administrador a vos mismo está bloqueado en la base: es la
-          forma más fácil de quedarse afuera del panel.
+        <p className="mt-3 text-sm text-tinta-suave">
+          No podés quitarte el rol de administrador.
         </p>
       )}
 

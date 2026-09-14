@@ -54,17 +54,13 @@ export default function Composicion({
 
   return (
     <section className="tarjeta p-4">
-      <h2 className="text-sm font-semibold">Qué lleva el ramo</h2>
-      <p className="mt-1 text-xs text-tinta-suave">
-        Es lo que se muestra en la ficha del catálogo y lo que usa el costeo. No cambia
-        el precio de venta: ese lo ponés vos.
-      </p>
+      <h2 className="text-base font-semibold">Qué lleva el ramo</h2>
 
       {capacidad !== null && (
         <p
           className={`mt-3 text-xs ${pasado ? 'font-medium text-alerta' : 'text-tinta-suave'}`}
         >
-          Ocupa {numero(usados)} de {numero(capacidad)} espacios
+          Ocupa {numero(usados)} de {numero(capacidad)} lugares
           {pasado ? ' — no entra en este envoltorio' : ''}
         </p>
       )}

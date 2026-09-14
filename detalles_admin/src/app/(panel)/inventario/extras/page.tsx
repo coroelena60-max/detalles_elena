@@ -7,7 +7,7 @@ import { clienteServidor } from '@/lib/supabase/servidor'
 import FiltroStock from '../FiltroStock'
 import TablaStock from '../TablaStock'
 
-export const metadata: Metadata = { title: 'Stock de extras' }
+export const metadata: Metadata = { title: 'Flores y extras' }
 export const dynamic = 'force-dynamic'
 
 export default async function PaginaStockExtras({
@@ -51,8 +51,8 @@ export default async function PaginaStockExtras({
   return (
     <div>
       <Encabezado
-        titulo="Stock de extras"
-        descripcion="Flores hechas a mano, peluches, tarjetas: lo que va adentro de los ramos o se vende suelto."
+        titulo="Inventario"
+        descripcion="Flores, peluches y tarjetas que hay hechos."
         modulo="inventario"
         permisos={sesion.permisos}
       />
@@ -66,7 +66,7 @@ export default async function PaginaStockExtras({
         <Cifra
           etiqueta="Con receta"
           valor={`${numero(todas.filter((f) => f.tieneReceta).length)} de ${numero(todas.length)}`}
-          detalle="las que descuentan insumos al producir"
+          detalle="las que gastan materiales al hacerse"
         />
       </div>
 

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import Icono from '@/components/Icono'
 import { bs, numero } from '@/lib/formato'
 import { exigirPermiso } from '@/lib/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
@@ -22,9 +23,12 @@ export async function generateMetadata({
 
 export default async function PaginaProducto({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ nuevo?: string }>
 }) {
+  const nuevo = (await searchParams).nuevo === '1'
   const sesion = await exigirPermiso('maestro.ver')
   const { id: crudo } = await params
   const id = Number(crudo)
@@ -91,17 +95,25 @@ export default async function PaginaProducto({
 
   return (
     <div>
-      <Link href="/productos" className="text-sm text-rosa-700 hover:underline">
-        ← Productos
+      <Link href="/productos" className="inline-flex items-center gap-1 text-sm text-rosa-700 hover:underline">
+        <Icono nombre="atras" className="size-4" />
+        Productos
       </Link>
 
+      {nuevo && (
+        <p role="status" className="mt-3 flex items-center gap-2 rounded-xl bg-ok-suave px-4 py-3 font-medium text-ok">
+          <Icono nombre="listo" />
+          Producto guardado.
+        </p>
+      )}
+
       <div className="mt-3 flex flex-wrap items-baseline gap-3">
-        <h1 className="text-xl font-semibold">{producto.nombre}</h1>
-        <span className="font-mono text-xs text-tinta-suave">{producto.codigo}</span>
+        <h1 className="text-2xl font-semibold">{producto.nombre}</h1>
+        <span className="font-mono text-sm text-tinta-suave">{producto.codigo}</span>
       </div>
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_20rem]">
-        <div className="space-y-4">
+      <div className="mt-5 grid items-start gap-4 lg:grid-cols-[1fr_22rem]">
+        <div className="min-w-0 space-y-4">
           <FormularioProducto
             inicial={{
               id: producto.id,
@@ -117,8 +129,6 @@ export default async function PaginaProducto({
               leadTimeDias: producto.lead_time_dias,
               minutosArmado: producto.minutos_armado,
               stockMinimo: Number(producto.stock_minimo ?? 0),
-              codigo: producto.codigo ?? undefined,
-              slug: producto.slug,
             }}
             opciones={opciones}
             puedeEditar={puedeEditar}
@@ -138,8 +148,15 @@ export default async function PaginaProducto({
         </div>
 
         <div className="space-y-4">
+          <Fotos
+            productoId={producto.id}
+            nombre={producto.nombre}
+            fotos={(fotos ?? []) as Foto[]}
+            puedeEditar={puedeEditar}
+          />
+
           <section className="tarjeta p-4">
-            <h2 className="text-sm font-semibold">Cuánto deja</h2>
+            <h2 className="text-base font-semibold">Cuánto deja</h2>
             <dl className="mt-3 space-y-1 text-sm">
               <div className="flex justify-between">
                 <dt className="text-tinta-suave">Precio</dt>
@@ -161,27 +178,17 @@ export default async function PaginaProducto({
                 <dd>{bs(vista?.precio_sugerido ?? 0)}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-tinta-suave">Existencia</dt>
+                <dt className="text-tinta-suave">Hay armados</dt>
                 <dd>{numero(vista?.existencia ?? 0)}</dd>
               </div>
             </dl>
             {vista?.a_perdida && (
-              <p className="mt-3 rounded-lg bg-alerta-suave px-3 py-2 text-xs text-alerta">
+              <p className="mt-3 rounded-lg bg-alerta-suave px-3 py-2 text-sm text-alerta">
                 Se vende por debajo de su costo.
               </p>
             )}
-            <p className="mt-3 text-xs text-tinta-suave">
-              El costo sale de las recetas y de la hora de trabajo. Si está en cero, todavía
-              faltan cargar los insumos.
-            </p>
           </section>
 
-          <Fotos
-            productoId={producto.id}
-            nombre={producto.nombre}
-            fotos={(fotos ?? []) as Foto[]}
-            puedeEditar={puedeEditar}
-          />
         </div>
       </div>
     </div>

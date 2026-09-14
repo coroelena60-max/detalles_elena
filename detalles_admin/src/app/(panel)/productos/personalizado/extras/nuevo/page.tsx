@@ -19,8 +19,7 @@ export default async function PaginaNuevoExtra() {
       </Link>
       <h1 className="mt-3 text-xl font-semibold">Nuevo extra</h1>
       <p className="mt-1 text-sm text-tinta-suave">
-        Arranca como borrador: no sale en el catálogo hasta que le pongas foto y lo actives. Después de
-        crearlo le cargás la receta.
+        No se muestra en el catálogo hasta que le pongas foto y lo actives.
       </p>
       <div className="mt-5">
         <FormularioExtra categorias={categorias ?? []} puedeEditar />

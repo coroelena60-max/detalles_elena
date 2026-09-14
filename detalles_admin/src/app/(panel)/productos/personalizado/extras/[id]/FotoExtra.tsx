@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
+import BotonConfirmar from '@/components/BotonConfirmar'
 import { Aviso } from '@/components/ui'
 import { revisarArchivo, subirConPermiso } from '@/lib/subidaFirmada'
 import { TIPOS_IMAGEN } from '@/lib/tipoImagen'
@@ -68,18 +69,17 @@ export default function FotoExtra({
             />
           </label>
           {url && (
-            <button
-              type="button"
+            <BotonConfirmar
+              pregunta="¿Quitar la foto?"
+              si="Sí, quitar"
               disabled={pendiente}
-              onClick={() => ejecutar(() => guardarFotoExtra(extraId, null))}
-              className="text-xs text-tinta-suave hover:text-alerta"
+              alConfirmar={() => ejecutar(() => guardarFotoExtra(extraId, null))}
             >
-              Quitar
-            </button>
+              Quitar foto
+            </BotonConfirmar>
           )}
         </div>
       )}
-      <p className="mt-2 text-xs text-tinta-suave">Cuadrada y liviana: se ve chiquita en el armador.</p>
       {aviso && <Aviso {...aviso} />}
     </section>
   )

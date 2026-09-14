@@ -1,9 +1,11 @@
 import { seccionesDe } from '@/lib/modulos'
+import Ayuda from './Ayuda'
 import Pestanas from './Pestanas'
 
 /**
- * Cabecera común de toda pantalla de módulo: título, una línea de ayuda,
- * acciones a la derecha y las pestañas del módulo debajo.
+ * Cabecera común de toda pantalla de módulo: título, acciones a la derecha y
+ * las pestañas del módulo debajo. La descripción NO se muestra suelta: queda
+ * detrás del "?" para que la pantalla arranque con lo que hay que hacer.
  */
 export default function Encabezado({
   titulo,
@@ -25,10 +27,10 @@ export default function Encabezado({
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-xl font-semibold">{titulo}</h1>
-          {descripcion && <p className="mt-1 text-sm text-tinta-suave">{descripcion}</p>}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-1">
+          <h1 className="text-2xl font-semibold">{titulo}</h1>
+          {descripcion && <Ayuda>{descripcion}</Ayuda>}
         </div>
         {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
       </div>

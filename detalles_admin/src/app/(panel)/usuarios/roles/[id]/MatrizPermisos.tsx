@@ -75,8 +75,7 @@ export default function MatrizPermisos({
 
       {esCompleto && (
         <p className="mt-3 rounded-lg bg-fondo px-3 py-2 text-sm text-tinta-suave">
-          Este rol siempre tiene todo, y la base no deja recortarlo: si se le pudiera
-          quitar el último permiso, nadie podría volver a entrar a arreglarlo.
+          Este rol siempre tiene todos los permisos.
         </p>
       )}
 

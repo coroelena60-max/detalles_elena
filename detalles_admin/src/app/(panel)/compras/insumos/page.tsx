@@ -8,7 +8,7 @@ import { exigirPermiso } from '@/lib/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import NuevoInsumo from './NuevoInsumo'
 
-export const metadata: Metadata = { title: 'Insumos' }
+export const metadata: Metadata = { title: 'Materiales' }
 export const dynamic = 'force-dynamic'
 
 export default async function PaginaInsumos({
@@ -49,8 +49,8 @@ export default async function PaginaInsumos({
   return (
     <div>
       <Encabezado
-        titulo="Insumos"
-        descripcion="La materia prima. Su costo alimenta el costo de cada flor y cada ramo."
+        titulo="Materiales"
+        descripcion="Lo que se compra para armar: papel, cinta, alambre."
         modulo="compra"
         permisos={sesion.permisos}
       >
@@ -58,7 +58,7 @@ export default async function PaginaInsumos({
       </Encabezado>
 
       <div className="mt-4 grid grid-cols-3 gap-3">
-        <Cifra etiqueta="Insumos en uso" valor={numero(activos.length)} />
+        <Cifra etiqueta="Materiales en uso" valor={numero(activos.length)} />
         <Cifra etiqueta="Para reponer" valor={numero(reponer)} tono={reponer ? 'alerta' : 'normal'} />
         <Cifra etiqueta="Valor del stock" valor={bs(valor)} detalle="existencia × costo" />
       </div>
@@ -80,24 +80,24 @@ export default async function PaginaInsumos({
         </nav>
         <form action="/compras/insumos" className="flex gap-2">
           {ver && <input type="hidden" name="ver" value={ver} />}
-          <input name="q" defaultValue={q} placeholder="Buscar…" aria-label="Buscar insumo" className="campo w-44 focus:campo-foco" />
+          <input name="q" defaultValue={q} placeholder="Buscar…" aria-label="Buscar material" className="campo w-44 focus:campo-foco" />
         </form>
       </div>
 
-      {error && <ErrorCarga que="los insumos" mensaje={error.message} />}
+      {error && <ErrorCarga que="los materiales" mensaje={error.message} />}
 
       {filas.length === 0 && !error ? (
         <Vacio>
           {todos.length === 0
-            ? 'Todavía no hay insumos. Cargalos para que el costo de los ramos deje de contar solo la mano de obra.'
-            : 'No hay insumos con este filtro.'}
+            ? 'Todavía no hay materiales cargados.'
+            : 'No hay materiales con este filtro.'}
         </Vacio>
       ) : (
         <section className="tarjeta mt-4 overflow-x-auto">
           <table className="w-full min-w-[620px] text-sm">
             <thead className="border-b border-linea bg-fondo text-left text-xs uppercase tracking-wide text-tinta-suave">
               <tr>
-                <th className="px-3 py-2 font-medium">Insumo</th>
+                <th className="px-3 py-2 font-medium">Material</th>
                 <th className="px-3 py-2 text-right font-medium">Hay</th>
                 <th className="px-3 py-2 text-right font-medium">Mínimo</th>
                 <th className="px-3 py-2 text-right font-medium">Costo</th>

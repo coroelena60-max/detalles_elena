@@ -58,7 +58,7 @@ export default async function PaginaReporteCompras({
     <div>
       <Encabezado
         titulo="Reporte de compras"
-        descripcion="Cuánto se invirtió en insumos, a quién y en qué. Suma solo las compras recibidas."
+        descripcion="Cuánto se gastó en materiales. Solo compras recibidas."
         modulo="reporte"
         permisos={sesion.permisos}
       >
@@ -103,7 +103,7 @@ export default async function PaginaReporteCompras({
             </section>
             <section className="tarjeta p-4">
               <h2 className="text-sm font-semibold">
-                {r.por_mes.length > 1 ? 'Mes a mes' : 'Insumos en los que más se invirtió'}
+                {r.por_mes.length > 1 ? 'Mes a mes' : 'Materiales en los que más se gastó'}
               </h2>
               {r.por_mes.length > 1 ? (
                 <Columnas
@@ -126,7 +126,7 @@ export default async function PaginaReporteCompras({
               <table className="mt-2 w-full min-w-[560px] text-sm">
                 <thead className="border-y border-linea bg-fondo text-left text-xs uppercase tracking-wide text-tinta-suave">
                   <tr>
-                    <th className="px-4 py-2 font-medium">Insumo</th>
+                    <th className="px-4 py-2 font-medium">Material</th>
                     <th className="px-4 py-2 text-right font-medium">Cantidad</th>
                     <th className="px-4 py-2 text-right font-medium">Costo promedio</th>
                     <th className="px-4 py-2 text-right font-medium">Total</th>

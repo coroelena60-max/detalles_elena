@@ -30,7 +30,7 @@ export default async function PaginaProveedores() {
     <div>
       <Encabezado
         titulo="Proveedores"
-        descripcion="A quién se le compran los insumos."
+        descripcion="A quién se le compran los materiales."
         modulo="compra"
         permisos={sesion.permisos}
       />

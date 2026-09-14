@@ -3,6 +3,8 @@
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
+import BotonConfirmar from '@/components/BotonConfirmar'
+import Icono from '@/components/Icono'
 import { revisarArchivo, subirConPermiso } from '@/lib/subidaFirmada'
 import { TIPOS_IMAGEN } from '@/lib/tipoImagen'
 import { borrarFoto, marcarFotoPrincipal, prepararSubidaFoto, registrarFoto } from '../acciones'
@@ -72,11 +74,7 @@ export default function Fotos({
 
   return (
     <section className="tarjeta p-4">
-      <h2 className="text-sm font-semibold">Fotos</h2>
-      <p className="mt-1 text-xs text-tinta-suave">
-        La principal es la que se ve en la lista del catálogo. Subí imágenes ya
-        comprimidas: el cliente entra en 4G.
-      </p>
+      <h2 className="text-base font-semibold">Fotos</h2>
 
       {fotos.length > 0 ? (
         <ul className="mt-3 grid grid-cols-2 gap-3">
@@ -92,33 +90,34 @@ export default function Fotos({
                 />
                 {f.es_principal && (
                   <span className="absolute left-1 top-1 rounded-full bg-rosa-600 px-2 py-0.5 text-[0.65rem] font-medium text-white">
-                    Principal
+                    Portada
                   </span>
                 )}
               </div>
               {puedeEditar && (
-                <div className="grid grid-cols-2 divide-x divide-linea border-t border-linea text-xs">
+                <div className="grid grid-cols-2 divide-x divide-linea border-t border-linea text-sm">
                   {f.es_principal ? (
-                    <span className="grid place-items-center px-1 py-2 text-tinta-suave">★ Principal</span>
+                    <span className="grid place-items-center px-1 py-2 text-tinta-suave">★ Portada</span>
                   ) : (
                     <button
                       type="button"
                       onClick={() => principal(f.id)}
                       disabled={ocupado}
-                      title="Usar como foto principal"
+                      title="Usar como la foto que se ve primero"
                       className="px-1 py-2 text-rosa-700 transition hover:bg-rosa-50 disabled:opacity-40"
                     >
-                      ☆ Principal
+                      ☆ Usar de portada
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => borrar(f)}
+                  <BotonConfirmar
+                    pregunta="¿Borrar esta foto?"
+                    si="Sí, borrar"
                     disabled={ocupado}
-                    className="px-1 py-2 text-tinta-suave transition hover:bg-alerta-suave hover:text-alerta disabled:opacity-40"
+                    alConfirmar={() => borrar(f)}
+                    className="w-full px-1 py-2 text-tinta-suave transition hover:bg-alerta-suave hover:text-alerta disabled:opacity-40"
                   >
                     Borrar
-                  </button>
+                  </BotonConfirmar>
                 </div>
               )}
             </li>
@@ -126,17 +125,17 @@ export default function Fotos({
         </ul>
       ) : (
         <p className="mt-3 rounded-lg bg-rosa-50 p-4 text-sm text-tinta-suave">
-          Todavía no tiene fotos. En el catálogo se ve el marcador ❀.
+          Todavía no tiene fotos.
         </p>
       )}
 
       {puedeEditar && (
         <label
-          className={`mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-rosa-300 px-3 py-3 text-sm font-medium text-rosa-700 transition hover:bg-rosa-50 ${
+          className={`mt-4 flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-rosa-300 px-3 py-3 text-base font-medium text-rosa-700 transition hover:bg-rosa-50 ${
             ocupado ? 'pointer-events-none opacity-50' : ''
           }`}
         >
-          <span aria-hidden>＋</span>
+          <Icono nombre="camara" />
           {subiendo ? 'Subiendo…' : 'Agregar una foto'}
           <input
             type="file"

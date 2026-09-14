@@ -144,9 +144,9 @@ export function Columnas({
 }
 
 export const BOTON =
-  'rounded-lg bg-rosa-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-rosa-700 disabled:opacity-60'
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-rosa-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-rosa-700 disabled:opacity-60'
 export const BOTON_SECUNDARIO =
-  'rounded-lg border border-rosa-300 bg-white px-4 py-2 text-sm font-medium text-rosa-700 transition hover:bg-rosa-50 disabled:opacity-60'
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-rosa-300 bg-white px-4 py-2 text-sm font-medium text-rosa-700 transition hover:bg-rosa-50 disabled:opacity-60'
 export const BOTON_SUAVE =
-  'rounded-lg border border-linea bg-white px-3 py-2 text-sm text-tinta-suave transition hover:bg-rosa-50 hover:text-tinta disabled:opacity-60'
+  'inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-linea bg-white px-3 py-2 text-sm text-tinta-suave transition hover:bg-rosa-50 hover:text-tinta disabled:opacity-60'
 export const CAMPO = 'campo mt-1 focus:campo-foco disabled:bg-fondo'

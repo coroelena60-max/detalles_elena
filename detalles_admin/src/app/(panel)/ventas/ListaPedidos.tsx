@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Encabezado from '@/components/Encabezado'
+import Icono from '@/components/Icono'
 import { BOTON } from '@/components/ui'
 import { ESTADOS, ESTADO_PAGO, rutaPedido, nombreCliente, type EstadoPedido } from '@/lib/estados'
 import { bs, haceCuanto } from '@/lib/formato'
@@ -105,7 +106,9 @@ export default async function ListaPedidos({
         </form>
         {tipo === 'ventas' && sesion.permisos.has('venta.editar') && (
           <Link href="/ventas/nueva" className={BOTON}>
-            Nueva venta
+                        <Icono nombre="vender" />
+            Vender
+
           </Link>
         )}
       </Encabezado>

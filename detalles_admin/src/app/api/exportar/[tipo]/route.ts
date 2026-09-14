@@ -78,7 +78,7 @@ const REPORTES: Record<
           titulo: 'Ventas confirmadas',
           columnas: ['Código', 'Día', 'Cliente', 'Canal', 'Estado', 'Total (Bs)', 'Cobrado (Bs)', 'Saldo (Bs)', 'Pago'],
           filas: r.ventas.map((v) => [
-            v.codigo, v.dia, v.cliente === 'S/N' ? 'S/C' : v.cliente, v.canal === 'mostrador' ? 'Mostrador' : 'Catálogo web',
+            v.codigo, v.dia, v.cliente === 'S/N' ? 'Cliente de paso' : v.cliente, v.canal === 'mostrador' ? 'Mostrador' : 'Catálogo web',
             v.estado, n(v.total), n(v.pagado), n(v.saldo), v.estado_pago,
           ]),
         },

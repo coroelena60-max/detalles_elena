@@ -1,3 +1,4 @@
+import Icono from '@/components/Icono'
 import Navegacion from '@/components/Navegacion'
 import { modulosVisibles } from '@/lib/modulos'
 import { exigirSesion } from '@/lib/sesion'
@@ -35,8 +36,9 @@ export default async function LayoutPanel({
             <form action={salir}>
               <button
                 type="submit"
-                className="rounded-lg border border-linea px-3 py-1.5 text-sm text-tinta-suave transition hover:bg-rosa-50 hover:text-rosa-700"
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-linea px-3 py-1.5 text-sm text-tinta-suave transition hover:bg-rosa-50 hover:text-rosa-700"
               >
+                <Icono nombre="salir" />
                 Salir
               </button>
             </form>
@@ -51,11 +53,10 @@ export default async function LayoutPanel({
         {sinRol ? (
           <div className="tarjeta p-6">
             <h1 className="text-base font-semibold">
-              Tu cuenta todavía no tiene rol
+              Tu cuenta todavía no está habilitada
             </h1>
             <p className="mt-2 text-sm text-tinta-suave">
-              Entraste bien, pero nadie te asignó todavía qué podés hacer. Pedile
-              a la administradora que te dé un rol desde Administración.
+              Pedile a la administradora que te habilite.
             </p>
             <p className="mt-3 text-xs text-tinta-suave">
               Tu correo: <strong>{sesion.email}</strong>

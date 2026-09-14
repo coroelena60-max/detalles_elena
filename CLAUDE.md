@@ -49,11 +49,13 @@ inventario, maestro, compra, venta y reportes) están construidos. Lo que sigue 
 
 ## 3. Stack
 
-- Next.js 16.3.4 (App Router, `src/`, Turbopack) + React 19 + TypeScript strict
+- Next.js 16.3.5 (App Router, `src/`, Turbopack) + React 19 + TypeScript strict
 - Tailwind CSS v4, ESLint (config de Next)
 - Supabase: Postgres + Storage (+ Auth en fase 2 para el admin)
 - `@supabase/supabase-js` + `@supabase/ssr`
 - Admin además: `zod` + `react-hook-form`
+- Catálogo además: `@vercel/analytics` (se sirve desde el mismo dominio, `/_vercel/insights`,
+  por eso no rompe la CSP; está declarado en `/privacidad`)
 - Alias de imports: `@/*` → `src/*`
 
 ### Comandos
@@ -87,6 +89,11 @@ Si se agregan tests, documentar acá cómo correr uno solo.
 Desde la raíz, sin `cd`: `corepack pnpm --dir detalles_admin type-check` (igual con
 `catalogo_web`). En `.claude/launch.json` están los servidores `catalogo` (:3000) y
 `admin` (:3001) para el panel de vista previa.
+
+Verificar cambios de UI: el catálogo se prueba completo en la vista previa (el ancho que
+importa es el de celular, ~375 px). El panel exige sesión y Claude no escribe contraseñas:
+para mirar una pantalla del panel, la persona inicia sesión en la pestaña de vista previa
+y recién después se navega y se toman capturas.
 
 Regenerar los tipos de la BD — **solo en el panel**, después de aplicar una migración
 (necesita `SUPABASE_ACCESS_TOKEN` en el entorno):
@@ -142,7 +149,7 @@ Fuente de verdad: `supabase/migrations/`. Probadas contra Postgres 16 local
 | `0019_usuarios_panel.sql` | `v_usuario_admin`, `v_rol_admin`, `cantidad_admins()` y los candados para no quedarse sin ningún administrador |
 | `0020_superadmin.sql` | rol `superadmin` con acceso total; el rol y las cuentas que lo tienen quedan **invisibles** para todos los demás |
 | `0021_contabilidad_reportes_y_candados.sql` | candado de permiso en todas las RPC del panel, `gasto` + `categoria_gasto`, `anular_compra()`/`anular_gasto()`, reportes por rango (`reporte_ventas`, `reporte_compras`, `reporte_ventas_confirmadas`, `reporte_ganancias`, `reporte_bitacora`), vistas `v_kardex` y `v_cliente_resumen`, bitácora sin cambios vacíos |
-| `0022_venta_sin_cliente.sql` | cliente genérico **S/N** (teléfono `0000000`, protegido contra renombre/borrado); `crear_venta_mostrador(p_cliente => {"sin_cliente": true})` lo usa y el panel lo muestra como **S/C** |
+| `0022_venta_sin_cliente.sql` | cliente genérico **S/N** (teléfono `0000000`, protegido contra renombre/borrado); `crear_venta_mostrador(p_cliente => {"sin_cliente": true})` lo usa y el panel lo muestra como **Cliente de paso** |
 | `0023_cotizacion.sql` | módulo **Cotización**: `cotizacion` + `cotizacion_material` + `cotizacion_extra`, vista `v_cotizacion` (la cuenta), `guardar_cotizacion()`, `convertir_cotizacion_en_producto()`, y `crear_venta_mostrador()` acepta líneas `{"tipo":"cotizacion"}`; permisos `cotizacion.ver/editar` |
 | `0024_pedidos_agenda_respaldo.sql` | permisos `pedido.ver/editar` (catálogo) separados de `venta.*` (mostrador) con RLS por `canal` y `exigir_permiso_pedido()` en las RPC; `pedido.fecha_compromiso` + `programar_pedido()` + vista `v_agenda` (minutos de taller); permiso `respaldo.descargar` |
 | `0025_cotizacion_otros_gastos.sql` | `cotizacion_otro` (concepto + monto), varios gastos fijos por cotización; `guardar_cotizacion()` acepta `p.otros` y guarda la suma en `otros_monto` (la vista no cambia); sin `p.otros` usa `otros_monto` como antes |
@@ -276,7 +283,7 @@ Decisiones que conviene no re-discutir:
 - **Ojo con los triggers al re-ejecutar seeds**: el de slug solo desambigua cuando el
   slug se genera desde el nombre, y el de foto principal no toca la fila que un
   `on conflict` va a actualizar. Aun así, un seed nuevo sobre `producto` o
-  `producto_imagen` tiene que filtrar en el `WHERE` (ver §4, "Re-ejecutarlo…").
+  `producto_imagen` tiene que filtrar en el `WHERE` (ver §4, "Cómo aplicarlas", candado 1).
 - **Subir fotos sin sesión en el navegador**: `prepararSubidaFoto()` / `prepararSubidaFotoExtra()` arman la
   ruta en el servidor y piden a Storage un permiso firmado (`createSignedUploadUrl`, que exige
   `maestro.editar`); el navegador sube con `lib/subidaFirmada.ts` (cliente sin sesión); y
@@ -373,6 +380,12 @@ Convenciones de UI:
 - Los tokens de diseño están en `src/app/globals.css` con `@theme` (Tailwind v4, sin
   `tailwind.config`): `rosa-50…700`, `tinta`, `tinta-suave`, `verde-wa` y la utilidad
   `contenedor`. Usar esas clases, no hex sueltos.
+- La excepción es el ramo de la portada: `public/portada-ramo-rosas.webp` (800×1052, fondo
+  transparente, ~86 KB) va con `next/image` directo y **no sale de la BD**. Se recortó del
+  PNG de AB-S-001 con `rembg` (modelo u2net + alpha matting) y se limpió a mano la pared que
+  asomaba arriba. Si se cambia la foto, repetir el recorte y revisar los bordes del tul.
+  La animación `animate-flotar` / `animate-sombra-flotar` está en `globals.css` y va con
+  `motion-safe:`.
 - Fotos: siempre `<ImagenCatalogo>`, que cae en el marcador ❀ cuando todavía no hay URL.
   `next.config.ts` deriva el host permitido de `NEXT_PUBLIC_SUPABASE_URL`.
 - Montos: siempre `bs()` / `precioProducto()` de `src/lib/formato.ts`.
@@ -481,6 +494,45 @@ barras, avisos, clases de botón), `components/FiltroFechas.tsx` (rango en la UR
 atajos), `lib/fechas.ts` (fechas de calendario de Bolivia como texto AAAA-MM-DD, nunca
 `new Date('2026-09-01')`), `lib/useAccion.ts` (botón → server action → aviso → refresh) y
 `lib/acciones.ts` (`traducirError`).
+
+Convenciones de UI del panel (distintas a las del catálogo: misma familia rosa, pero más
+gris — "acá se trabaja, no se vende"):
+- Tokens en `detalles_admin/src/app/globals.css`: `rosa-50…700` (sin `rosa-400`), `tinta`
+  y `tinta-suave` **con otros valores que en el catálogo**, `linea`, `fondo` y los de estado
+  `ok` / `aviso` / `alerta` con su variante `-suave` para fondos. Utilidades `tarjeta`
+  (caja blanca con borde) y `campo` / `campo-foco`.
+- Botones y campos: las constantes `BOTON`, `BOTON_SECUNDARIO`, `BOTON_SUAVE` y `CAMPO` de
+  `components/ui.tsx`, no clases armadas a mano. Ahí mismo están `Cifra`, `Aviso`,
+  `ErrorCarga`, `Vacio`, `Etiqueta` y los gráficos `Barras` / `Columnas` (sin librería).
+- Colores de estado de pedido/compra: siempre desde `lib/estados.ts`.
+- Un cambio de estilo general se hace en el token o en `ui.tsx`, no pantalla por pantalla
+  (hay ~20 archivos que usan las constantes de botón).
+
+**El panel lo usa gente que no maneja bien la computadora** (rediseño 2026-09-14). Reglas:
+- Letra base 18 px (`html { font-size: 112.5% }` en `globals.css`): todo lo que es rem crece
+  junto. Botones de al menos 44 px (`min-h-11`); los `BOTON*` ya lo traen.
+- **Una línea de ayuda como máximo, en lenguaje de tienda.** Lo que explica va detrás del "?":
+  `<Ayuda>` (un `<details>` nativo). `<Encabezado descripcion=…>` ya no la muestra suelta, la
+  pone en el "?". Nada de "la base", "RLS", "slug", códigos de permiso ni "Supabase" en pantalla.
+- Vocabulario: *Material* (no insumo), *Sin publicar* (borrador de producto), *Por recibir*
+  (borrador de compra), *Cliente de paso* (el cliente genérico S/N), *lugares* (no espacios),
+  *Oculto* / *En el catálogo* / *Agotado*. Los nombres de tablas, enums y permisos no cambian.
+- Íconos: `<Icono nombre="vender" />` (`components/Icono.tsx`, SVG propio, sin librería). Cada
+  módulo tiene el suyo en `lib/modulos.ts`; los `principal: true` van a la vista en la barra
+  (Inicio, Ventas, Pedidos, Productos) y el resto dentro de "Más".
+- Nada irreversible con un clic: `<BotonConfirmar pregunta si alConfirmar>` pregunta en el lugar
+  (cancelar pedido, borrar foto o categoría, bloquear acceso). Anular compra/gasto sigue con
+  `AnularConMotivo`.
+- Elegir entre pocas opciones = botones grandes (`claseChip` en `productos/FormularioProducto.tsx`),
+  no `<select>`.
+- **Vender** (`ventas/nueva/VentaMostrador.tsx`): grilla de fotos (tocar suma uno), ticket con
+  "¿Cómo paga?" y "¿Se lo lleva ahora?", y un solo botón que llama `venderEnMostrador()`:
+  `crear_venta_mostrador` → `registrar_pago(total que devolvió la base)` → `cambiar_estado_pedido
+  ('entregado')`. No es atómico: si falla un paso, la venta queda y se avisa qué faltó.
+- **Nuevo producto** es un asistente de 3 pasos (`productos/nuevo/AsistenteProducto.tsx`): foto →
+  nombre/precio/categoría → publicar. Crea el producto y recién después sube la foto (la ruta lleva
+  el código que pone la base). Lo técnico (envoltorio, minutos, posición, stock mínimo, temporada)
+  está en "Más opciones" de la ficha.
 
 Módulos construidos (todos los del diagrama):
 

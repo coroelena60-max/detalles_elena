@@ -52,7 +52,7 @@ export default async function PaginaReporteVentas({
     <div>
       <Encabezado
         titulo="Reporte de ventas"
-        descripcion="Qué se vende, cuándo y por dónde entra. Cuenta como vendido solo lo confirmado; lo que quedó sin confirmar aparece aparte."
+        descripcion="Qué se vende y cuándo. Solo cuenta lo confirmado."
         modulo="reporte"
         permisos={sesion.permisos}
       >

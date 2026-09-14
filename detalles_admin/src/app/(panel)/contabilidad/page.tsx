@@ -70,7 +70,7 @@ export default async function PaginaGastos({
     <div>
       <Encabezado
         titulo="Gastos"
-        descripcion="Lo que sale y no vuelve como mercadería: alquiler, luz, delivery, publicidad. Las compras de insumos van en Compras."
+        descripcion="Alquiler, luz, delivery, publicidad. Los materiales van en Compras."
         modulo="contabilidad"
         permisos={sesion.permisos}
       >

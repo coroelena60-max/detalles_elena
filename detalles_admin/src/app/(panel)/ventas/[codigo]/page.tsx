@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import Icono from '@/components/Icono'
 import Miniatura from '@/components/Miniatura'
 import ProgramarFecha from '@/components/ProgramarFecha'
 import { ESTADOS, ESTADO_PAGO, METODOS_PAGO, fotoPrincipal, nombreCliente } from '@/lib/estados'
@@ -80,36 +81,38 @@ export default async function PaginaPedido({
     <div>
       <Link
         href={pedido.canal === 'mostrador' ? '/ventas' : '/pedidos'}
-        className="text-sm text-rosa-700 hover:underline"
+        className="inline-flex items-center gap-1 text-sm text-rosa-700 hover:underline"
       >
-        ← {pedido.canal === 'mostrador' ? 'Ventas' : 'Pedidos'}
+        <Icono nombre="atras" className="size-4" />
+        {pedido.canal === 'mostrador' ? 'Ventas' : 'Pedidos'}
       </Link>
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <h1 className="font-mono text-xl font-semibold">{codigo}</h1>
-        <span className={`rounded-full px-2.5 py-0.5 text-xs ${estado.clase}`}>
+        <h1 className="font-mono text-2xl font-semibold">{codigo}</h1>
+        <span className={`rounded-full px-3 py-1 text-sm font-medium ${estado.clase}`}>
           {estado.etiqueta}
         </span>
-        <span className={`rounded-full px-2.5 py-0.5 text-xs ${pago.clase}`}>
+        <span className={`rounded-full px-3 py-1 text-sm font-medium ${pago.clase}`}>
           {pago.etiqueta}
         </span>
-        <span className="text-xs text-tinta-suave">
+        <span className="text-sm text-tinta-suave">
           {pedido.canal === 'mostrador' ? 'Mostrador' : 'Catálogo web'} ·{' '}
           {fechaHora(pedido.created_at)}
         </span>
         <Link
           href={`/comprobante/${codigo}`}
-          className="ml-auto rounded-lg border border-linea bg-white px-3 py-1.5 text-sm transition hover:bg-rosa-50"
+          className="ml-auto inline-flex min-h-10 items-center gap-2 rounded-lg border border-linea bg-white px-3 py-1.5 text-sm transition hover:bg-rosa-50"
         >
-          🧾 Comprobante
+          <Icono nombre="imprimir" />
+          Comprobante
         </Link>
       </div>
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_20rem]">
+      <div className="mt-5 grid items-start gap-4 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-4">
           {/* ---------------- Qué pidió ---------------- */}
           <section className="tarjeta p-4">
-            <h2 className="text-sm font-semibold">Qué pidió</h2>
+            <h2 className="text-base font-semibold">Qué pidió</h2>
             <ul className="mt-3 divide-y divide-linea">
               {(pedido.items ?? []).map((i) => {
                 const extras = (i.extras ?? []) as {
@@ -190,7 +193,7 @@ export default async function PaginaPedido({
             {pedido.nota_cliente && (
               <p className="mt-4 rounded-lg bg-rosa-50 p-3 text-sm">
                 <strong className="block text-xs uppercase tracking-wide text-tinta-suave">
-                  Nota del cliente
+                  {pedido.canal === 'mostrador' ? 'Nota' : 'Nota del cliente'}
                 </strong>
                 {pedido.nota_cliente}
               </p>
@@ -200,7 +203,7 @@ export default async function PaginaPedido({
           {/* ---------------- Cobros ---------------- */}
           {pagos && pagos.length > 0 && (
             <section className="tarjeta p-4">
-              <h2 className="text-sm font-semibold">Cobros</h2>
+              <h2 className="text-base font-semibold">Cobros</h2>
               <ul className="mt-3 divide-y divide-linea text-sm">
                 {pagos.map((g) => (
                   <li key={g.id} className="flex items-center gap-3 py-2">
@@ -219,10 +222,18 @@ export default async function PaginaPedido({
           )}
         </div>
 
-        {/* ---------------- Columna lateral ---------------- */}
-        <div className="space-y-4">
+        {/* ---------------- Columna lateral: primero lo que hay que hacer ---------------- */}
+        <div className="space-y-4 lg:order-none">
+          <AccionesPedido
+            codigo={codigo}
+            pedidoId={pedido.id}
+            estado={pedido.estado}
+            saldo={Number(saldo?.saldo ?? 0)}
+            puedeEditar={sesion.permisos.has(pedido.canal === 'mostrador' ? 'venta.editar' : 'pedido.editar')}
+            puedeCobrar={sesion.permisos.has('pago.registrar')}
+          />
           <section className="tarjeta p-4">
-            <h2 className="text-sm font-semibold">Cliente</h2>
+            <h2 className="text-base font-semibold">Cliente</h2>
             <p className="mt-2 text-sm font-medium">{nombreCliente(cliente)}</p>
             {cliente?.telefono && cliente.nombre !== 'S/N' && (
               <p className="mt-1 text-sm">
@@ -232,7 +243,7 @@ export default async function PaginaPedido({
                   rel="noopener noreferrer"
                   className="text-rosa-700 hover:underline"
                 >
-                  {cliente.telefono} · escribir por WhatsApp
+                  {cliente.telefono} · WhatsApp
                 </a>
               </p>
             )}
@@ -242,7 +253,7 @@ export default async function PaginaPedido({
           </section>
 
           <section className="tarjeta p-4">
-            <h2 className="text-sm font-semibold">Entrega</h2>
+            <h2 className="text-base font-semibold">Entrega</h2>
             {pedido.tipo_entrega === 'envio' && entrega ? (
               <div className="mt-2 space-y-1 text-sm">
                 <p>{entrega.direccion}</p>
@@ -264,15 +275,12 @@ export default async function PaginaPedido({
                 {entrega.instrucciones && (
                   <p className="text-tinta-suave">{entrega.instrucciones}</p>
                 )}
-                <p className="pt-1 text-xs text-tinta-suave">
-                  El envío se cotiza aparte; no está en el total.
-                </p>
               </div>
             ) : (
               <p className="mt-2 text-sm">Retira en la tienda.</p>
             )}
             <div className="mt-3 border-t border-linea pt-3">
-              <p className="text-xs font-medium text-tinta-suave">Tenerlo listo para el día (agenda)</p>
+              <p className="text-sm font-medium text-tinta-suave">¿Para qué día?</p>
               {sesion.permisos.has(pedido.canal === 'mostrador' ? 'venta.editar' : 'pedido.editar') &&
               pedido.estado !== 'entregado' && pedido.estado !== 'cancelado' ? (
                 <div className="mt-1">
@@ -284,14 +292,6 @@ export default async function PaginaPedido({
             </div>
           </section>
 
-          <AccionesPedido
-            codigo={codigo}
-            pedidoId={pedido.id}
-            estado={pedido.estado}
-            saldo={Number(saldo?.saldo ?? 0)}
-            puedeEditar={sesion.permisos.has(pedido.canal === 'mostrador' ? 'venta.editar' : 'pedido.editar')}
-            puedeCobrar={sesion.permisos.has('pago.registrar')}
-          />
 
           {pedido.nota_interna && (
             <p className="tarjeta p-4 text-sm">

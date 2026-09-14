@@ -11,7 +11,7 @@ import { clienteServidor } from '@/lib/supabase/servidor'
 export const metadata: Metadata = { title: 'Movimientos de stock' }
 export const dynamic = 'force-dynamic'
 
-const ITEMS = { producto: 'Productos', extra: 'Extras', insumo: 'Insumos' } as const
+const ITEMS = { producto: 'Productos', extra: 'Extras', insumo: 'Materiales' } as const
 
 export default async function PaginaMovimientos({
   searchParams,
@@ -47,7 +47,7 @@ export default async function PaginaMovimientos({
     <div>
       <Encabezado
         titulo="Movimientos de stock"
-        descripcion="Cada unidad que entró o salió, con quién y por qué. El stock de las otras pantallas es la suma de esta lista."
+        descripcion="Todo lo que entró y salió, con quién y por qué."
         modulo="inventario"
         permisos={sesion.permisos}
       />

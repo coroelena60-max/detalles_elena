@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import Encabezado from '@/components/Encabezado'
+import Icono from '@/components/Icono'
+import { BOTON } from '@/components/ui'
 import { bs, numero } from '@/lib/formato'
 import type { Database } from '@/types/database'
 import { exigirPermiso } from '@/lib/sesion'
@@ -13,7 +15,7 @@ export const dynamic = 'force-dynamic'
 type EstadoPublicacion = Database['public']['Enums']['estado_publicacion']
 
 const ESTADOS_PRODUCTO: Record<EstadoPublicacion, { etiqueta: string; clase: string }> = {
-  borrador: { etiqueta: 'Borrador', clase: 'bg-rosa-100 text-rosa-700' },
+  borrador: { etiqueta: 'Sin publicar', clase: 'bg-rosa-100 text-rosa-700' },
   activo: { etiqueta: 'En el catálogo', clase: 'bg-ok-suave text-ok' },
   agotado: { etiqueta: 'Agotado', clase: 'bg-aviso-suave text-aviso' },
   temporada: { etiqueta: 'De temporada', clase: 'bg-ok-suave text-ok' },
@@ -42,7 +44,7 @@ export default async function PaginaProductos({
   const filtros = [
     { clave: 'todos', etiqueta: 'Todos' },
     { clave: 'activo', etiqueta: 'En el catálogo' },
-    { clave: 'borrador', etiqueta: 'Borradores' },
+    { clave: 'borrador', etiqueta: 'Sin publicar' },
     { clave: 'agotado', etiqueta: 'Agotados' },
     { clave: 'inactivo', etiqueta: 'Fuera' },
   ]
@@ -52,16 +54,18 @@ export default async function PaginaProductos({
     <div>
       <Encabezado
         titulo="Productos"
-        descripcion="Los ramos que ve el cliente en el catálogo. El precio lo decidís vos; el costo lo calcula la base con las recetas."
+        descripcion="Los ramos que ve el cliente en el catálogo."
         modulo="maestro"
         permisos={sesion.permisos}
       >
         {puedeEditar && (
           <Link
             href="/productos/nuevo"
-            className="rounded-lg bg-rosa-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-rosa-700"
+            className={BOTON}
           >
+                        <Icono nombre="camara" />
             Nuevo producto
+
           </Link>
         )}
       </Encabezado>
@@ -98,13 +102,13 @@ export default async function PaginaProductos({
                 href={`/productos/${p.id}`}
                 className="tarjeta flex items-center gap-3 p-3 transition hover:border-rosa-300"
               >
-                <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-rosa-50">
+                <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-rosa-50">
                   {p.imagen_principal ? (
                     <Image
                       src={p.imagen_principal}
                       alt=""
                       fill
-                      sizes="56px"
+                      sizes="64px"
                       className="object-cover"
                     />
                   ) : (
@@ -115,21 +119,21 @@ export default async function PaginaProductos({
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{p.nombre}</p>
-                  <p className="mt-0.5 text-xs text-tinta-suave">
-                    <span className="font-mono">{p.codigo}</span> · {p.categoria}
-                    {p.envoltorio ? ` · ${p.envoltorio}` : ''} · {p.fotos} foto
-                    {p.fotos === 1 ? '' : 's'}
+                  <p className="line-clamp-2 font-medium leading-snug">{p.nombre}</p>
+                  <p className="mt-0.5 text-sm text-tinta-suave">
+                    {p.categoria}
+                    {p.fotos === 0 && <span className="text-aviso"> · sin foto</span>}
                   </p>
                 </div>
 
-                <div className="shrink-0 text-right">
-                  <p className="text-sm font-semibold">
+                <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+                  <p className="font-semibold">
                     {p.precio_desde ? 'desde ' : ''}
                     {bs(p.precio)}
                   </p>
+                  <span className={`rounded-full px-2 py-0.5 text-xs ${est.clase}`}>{est.etiqueta}</span>
                   <p
-                    className={`text-xs ${p.a_perdida ? 'text-alerta' : 'text-tinta-suave'}`}
+                    className={`hidden text-xs sm:block ${p.a_perdida ? 'text-alerta' : 'text-tinta-suave'}`}
                   >
                     costo {bs(p.costo_total)}
                     {p.margen_pct !== null && p.margen_pct !== undefined
@@ -138,11 +142,6 @@ export default async function PaginaProductos({
                   </p>
                 </div>
 
-                <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${est.clase}`}
-                >
-                  {est.etiqueta}
-                </span>
               </Link>
             </li>
           )

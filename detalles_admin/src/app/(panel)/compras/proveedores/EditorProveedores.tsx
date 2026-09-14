@@ -101,8 +101,7 @@ export default function EditorProveedores({
 
       {proveedores.length === 0 ? (
         <p className="tarjeta mt-4 p-6 text-sm text-tinta-suave">
-          Todavía no hay proveedores. No son obligatorios, pero ayudan a saber a quién se le
-          compra más y dónde conseguir cada insumo.
+          Todavía no hay proveedores.
         </p>
       ) : (
         <ul className="tarjeta mt-4 divide-y divide-linea">

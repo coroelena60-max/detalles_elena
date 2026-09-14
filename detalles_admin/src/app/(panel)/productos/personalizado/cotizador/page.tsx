@@ -59,8 +59,7 @@ export default async function PaginaCotizador() {
       </Link>
       <h1 className="mt-3 text-xl font-semibold">Cotizador</h1>
       <p className="mt-1 text-sm text-tinta-suave">
-        Armá el ramo que te piden por WhatsApp y mirá cuánto cuesta hacerlo y cuánto conviene cobrar.
-        Es el mismo cálculo que usa el catálogo, pero con los costos a la vista.
+        Armá el ramo y mirá cuánto cobrar.
       </p>
       <Cotizador envoltorios={envoltorios} extras={listaExtras} />
     </div>

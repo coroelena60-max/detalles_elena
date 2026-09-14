@@ -42,7 +42,7 @@ export default async function PaginaPermisos() {
     <div>
       <Encabezado
         titulo="Permisos"
-        descripcion="Las llaves que existen en el sistema. No se crean ni se borran desde acá: son parte del programa, como los estados de un pedido."
+        descripcion="Qué se puede hacer en el panel. Se reparten con los roles."
         modulo="administracion"
         permisos={sesion.permisos}
       />
@@ -84,12 +84,12 @@ export default async function PaginaPermisos() {
         ))}
       </div>
 
-      <p className="mt-4 text-xs text-tinta-suave">
-        Para que alguien gane o pierda una de estas llaves se cambia el{' '}
+      <p className="mt-4 text-sm text-tinta-suave">
+        Para dar o quitar permisos se cambia el{' '}
         <Link href="/usuarios/roles" className="text-rosa-700 hover:underline">
           rol
         </Link>
-        , no el permiso. Sumar un permiso nuevo es tocar el programa, no esta pantalla.
+         de la persona.
       </p>
     </div>
   )

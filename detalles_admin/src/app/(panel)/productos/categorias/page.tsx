@@ -30,7 +30,7 @@ export default async function PaginaCategorias() {
     <div>
       <Encabezado
         titulo="Categorías"
-        descripcion="Cómo se agrupan los ramos en el catálogo. El orden es el de las pestañas que ve el cliente."
+        descripcion="Los grupos de ramos que ve el cliente en el catálogo."
         modulo="maestro"
         permisos={sesion.permisos}
       />

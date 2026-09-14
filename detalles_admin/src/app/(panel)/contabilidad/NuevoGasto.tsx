@@ -62,9 +62,8 @@ export default function NuevoGasto({
       className="tarjeta mt-4 w-full p-4"
     >
       <h2 className="text-sm font-semibold">Nuevo gasto</h2>
-      <p className="mt-1 text-xs text-tinta-suave">
-        Plata que sale y no vuelve como mercadería. Si compraste papel, cinta o peluches para
-        armar ramos, eso es una <strong>compra</strong>, no un gasto.
+      <p className="mt-1 text-sm text-tinta-suave">
+        Alquiler, luz, delivery. Los materiales van en <strong>Compras</strong>.
       </p>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

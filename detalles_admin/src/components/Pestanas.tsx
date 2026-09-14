@@ -20,7 +20,7 @@ export default function Pestanas({
     .sort((a, b) => b.href.length - a.href.length)[0]?.href
 
   return (
-    <nav aria-label="Secciones" className="mt-4 flex gap-1 overflow-x-auto border-b border-linea">
+    <nav aria-label="Secciones" className="mt-4 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-linea">
       {secciones.map((s) => {
         const esta = s.href === activa
         return (
@@ -28,7 +28,7 @@ export default function Pestanas({
             key={s.href}
             href={s.href}
             aria-current={esta ? 'page' : undefined}
-            className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm transition ${
+            className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-sm transition ${
               esta
                 ? 'border-rosa-600 font-medium text-rosa-700'
                 : 'border-transparent text-tinta-suave hover:text-tinta'

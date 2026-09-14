@@ -160,7 +160,7 @@ export default function Cotizador({
           )}
         </section>
         <p className="text-xs text-tinta-suave">
-          Si el costo sale muy bajo es que faltan recetas: sin insumos cargados solo cuenta la mano de obra.
+          Si el costo sale muy bajo, faltan cargar materiales.
         </p>
       </aside>
     </div>

@@ -262,8 +262,8 @@ export default function Calculadora({ opciones, inicial }: { opciones: Opciones;
         {/* ---------------- Materiales ---------------- */}
         <section className="tarjeta p-4">
           <h2 className="text-sm font-semibold">1. Materiales que compraste</h2>
-          <p className="mt-0.5 text-xs text-tinta-suave">
-            Escribí cuánto compraste, cuánto pagaste y cuánto usás en este producto. Si el material ya está en Compras → Insumos, elegilo de la lista.
+          <p className="mt-0.5 text-sm text-tinta-suave">
+            Cuánto compraste, cuánto pagaste y cuánto usás.
           </p>
           <datalist id="lista-insumos">
             {opciones.insumos.map((i) => (
@@ -329,7 +329,7 @@ export default function Calculadora({ opciones, inicial }: { opciones: Opciones;
                     ) : (
                       'Completá cuánto compraste y cuánto pagaste'
                     )}
-                    {m.insumoId && <span className="ml-2 rounded bg-ok-suave px-1.5 py-0.5 text-ok">insumo del sistema</span>}
+                    {m.insumoId && <span className="ml-2 rounded bg-ok-suave px-1.5 py-0.5 text-ok">ya cargado</span>}
                   </span>
                   <span className="text-sm font-semibold tabular-nums">{bs(m.costo)}</span>
                 </div>
@@ -515,7 +515,7 @@ export default function Calculadora({ opciones, inicial }: { opciones: Opciones;
             </button>
           )}
           {aviso && <Aviso {...aviso} />}
-          {inicial && <p className="mt-2 text-xs text-tinta-suave">Guardá antes de convertir o vender: se usa lo último guardado.</p>}
+          {inicial && <p className="mt-2 text-sm text-tinta-suave">Guardá antes de vender.</p>}
         </section>
 
         {inicial && (
@@ -537,7 +537,7 @@ export default function Calculadora({ opciones, inicial }: { opciones: Opciones;
               opciones.puedeEditar && (
                 <div className="rounded-lg border border-linea p-3">
                   <p className="text-sm font-medium">Convertir en producto</p>
-                  <p className="text-xs text-tinta-suave">Queda en borrador con este precio, sus minutos y su composición. Después le ponés foto y lo publicás.</p>
+                  <p className="text-sm text-tinta-suave">Queda sin publicar hasta que le pongas foto.</p>
                   <select value={categoria} onChange={(e) => setCategoria(Number(e.target.value))} aria-label="Categoría" className="campo mt-2 py-1.5 text-sm focus:campo-foco">
                     <option value={0}>Elegí la categoría…</option>
                     {opciones.categorias.map((c) => (

@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Icono from '@/components/Icono'
 import { fotoPrincipal } from '@/lib/estados'
 import { exigirPermiso } from '@/lib/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import type { Envoltorio, ExtraArmado } from './ArmarRamo'
 import VentaMostrador, { type Vendible } from './VentaMostrador'
 
-export const metadata: Metadata = { title: 'Nueva venta' }
+export const metadata: Metadata = { title: 'Vender' }
 export const dynamic = 'force-dynamic'
 
 export default async function PaginaNuevaVenta({
@@ -57,7 +58,7 @@ export default async function PaginaNuevaVenta({
         id: e.id,
         nombre: e.nombre,
         precio: Number(e.precio),
-        detalle: 'extra suelto',
+        detalle: 'extra',
         imagen: e.imagen_url,
       }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre)),
@@ -88,14 +89,11 @@ export default async function PaginaNuevaVenta({
 
   return (
     <div>
-      <Link href="/ventas" className="text-sm text-rosa-700 hover:underline">
-        ← Ventas
+      <Link href="/ventas" className="inline-flex items-center gap-1 text-sm text-rosa-700 hover:underline">
+        <Icono nombre="atras" className="size-4" />
+        Ventas
       </Link>
-      <h1 className="mt-3 text-xl font-semibold">Nueva venta de mostrador</h1>
-      <p className="mt-1 text-sm text-tinta-suave">
-        Para lo que se vende en la tienda o se cierra por teléfono sin pasar por el catálogo.
-        Podés vender productos ya armados, extras sueltos, armar un ramo personalizado o vender una cotización.
-      </p>
+      <h1 className="mt-2 text-2xl font-semibold">Vender</h1>
       <VentaMostrador
         vendibles={vendibles}
         envoltorios={listaEnvoltorios}
@@ -107,6 +105,7 @@ export default async function PaginaNuevaVenta({
           precio: Number(c.precio),
         }))}
         cotizacionInicial={cotizacion ? Number(cotizacion) : null}
+        puedeCobrar={sesion.permisos.has('pago.registrar')}
       />
     </div>
   )

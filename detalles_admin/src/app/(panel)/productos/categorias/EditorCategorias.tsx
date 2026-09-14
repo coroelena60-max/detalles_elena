@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import BotonConfirmar from '@/components/BotonConfirmar'
 import { Aviso, BOTON, BOTON_SECUNDARIO, CAMPO, Etiqueta } from '@/components/ui'
 import { useAccion } from '@/lib/useAccion'
 import { borrarCategoria, guardarCategoria, type DatosCategoria } from '../maestro'
@@ -98,18 +99,18 @@ export default function EditorCategorias({ categorias, puedeEditar }: { categori
                 {!c.activa && <Etiqueta clase="bg-alerta-suave text-alerta">Oculta</Etiqueta>}
                 {puedeEditar && (
                   <span className="flex gap-3">
-                    <button type="button" onClick={() => setEditando(c.id)} className="text-xs text-rosa-700 hover:underline">
+                    <button type="button" onClick={() => setEditando(c.id)} className="text-sm text-rosa-700 hover:underline">
                       Editar
                     </button>
                     {c.productos === 0 && (
-                      <button
-                        type="button"
+                      <BotonConfirmar
+                        pregunta={`¿Borrar la categoría ${c.nombre}?`}
+                        si="Sí, borrar"
                         disabled={borrar.pendiente}
-                        onClick={() => borrar.ejecutar(() => borrarCategoria(c.id))}
-                        className="text-xs text-tinta-suave hover:text-alerta"
+                        alConfirmar={() => borrar.ejecutar(() => borrarCategoria(c.id))}
                       >
                         Borrar
-                      </button>
+                      </BotonConfirmar>
                     )}
                   </span>
                 )}

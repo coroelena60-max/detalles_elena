@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
+import BotonConfirmar from '@/components/BotonConfirmar'
 import { cambiarActivo, guardarPerfil } from '../acciones'
 
 export default function DatosPersona({
@@ -77,27 +78,33 @@ export default function DatosPersona({
             Guardar
           </button>
 
-          {!esYo && (
+          {!esYo && activo && (
+            <BotonConfirmar
+              pregunta={`¿Bloquear el acceso de ${nombre || 'esta persona'}? No va a poder entrar al panel.`}
+              si="Sí, bloquear"
+              disabled={pendiente}
+              alConfirmar={() => accion(() => cambiarActivo(id, false))}
+              className="rounded-lg border border-linea px-4 py-2 text-sm font-medium text-tinta-suave transition hover:border-alerta hover:text-alerta disabled:opacity-60"
+            >
+              Bloquear acceso
+            </BotonConfirmar>
+          )}
+          {!esYo && !activo && (
             <button
               type="button"
               disabled={pendiente}
-              onClick={() => accion(() => cambiarActivo(id, !activo))}
-              className={`rounded-lg border px-4 py-2 text-sm font-medium transition disabled:opacity-60 ${
-                activo
-                  ? 'border-linea text-tinta-suave hover:border-alerta hover:text-alerta'
-                  : 'border-rosa-300 text-rosa-700 hover:bg-rosa-50'
-              }`}
+              onClick={() => accion(() => cambiarActivo(id, true))}
+              className="rounded-lg border border-rosa-300 px-4 py-2 text-sm font-medium text-rosa-700 transition hover:bg-rosa-50 disabled:opacity-60"
             >
-              {activo ? 'Quitarle la entrada' : 'Dejarla entrar de nuevo'}
+              Devolver acceso
             </button>
           )}
         </div>
       )}
 
       {esYo && puedeEditar && (
-        <p className="mt-3 text-xs text-tinta-suave">
-          Es tu propia cuenta: no podés desactivarte ni quitarte el rol de administrador.
-          Eso lo tiene que hacer otro administrador, a propósito.
+        <p className="mt-3 text-sm text-tinta-suave">
+          Es tu cuenta: no podés bloquear tu propio acceso.
         </p>
       )}
 

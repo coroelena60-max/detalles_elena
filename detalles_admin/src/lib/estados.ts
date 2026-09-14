@@ -74,7 +74,7 @@ export type TipoMovimiento = Database['public']['Enums']['tipo_movimiento']
 export type EstadoPublicacion = Database['public']['Enums']['estado_publicacion']
 
 export const ESTADOS_COMPRA: Record<EstadoCompra, { etiqueta: string; clase: string }> = {
-  borrador: { etiqueta: 'Borrador', clase: 'bg-aviso-suave text-aviso' },
+  borrador: { etiqueta: 'Por recibir', clase: 'bg-aviso-suave text-aviso' },
   recibida: { etiqueta: 'Recibida', clase: 'bg-ok-suave text-ok' },
   anulada: { etiqueta: 'Anulada', clase: 'bg-alerta-suave text-alerta' },
 }
@@ -104,7 +104,7 @@ export const TIPOS_MOVIMIENTO: Record<TipoMovimiento, { etiqueta: string; clase:
 }
 
 export const ESTADOS_PUBLICACION: Record<EstadoPublicacion, { etiqueta: string; clase: string }> = {
-  borrador: { etiqueta: 'Borrador', clase: 'bg-rosa-100 text-rosa-700' },
+  borrador: { etiqueta: 'Sin publicar', clase: 'bg-rosa-100 text-rosa-700' },
   activo: { etiqueta: 'En el catálogo', clase: 'bg-ok-suave text-ok' },
   agotado: { etiqueta: 'Agotado', clase: 'bg-aviso-suave text-aviso' },
   temporada: { etiqueta: 'De temporada', clase: 'bg-ok-suave text-ok' },
@@ -121,7 +121,7 @@ export const TELEFONO_SIN_CLIENTE = '0000000'
 
 export function nombreCliente(c: { nombre?: string | null; telefono?: string | null } | null): string {
   if (!c) return 'Sin cliente'
-  if (c.telefono === TELEFONO_SIN_CLIENTE || c.nombre === 'S/N') return 'S/C · Sin cliente'
+  if (c.telefono === TELEFONO_SIN_CLIENTE || c.nombre === 'S/N') return 'Cliente de paso'
   return c.nombre ?? 'Sin cliente'
 }
 

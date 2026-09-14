@@ -7,7 +7,7 @@ import { clienteServidor } from '@/lib/supabase/servidor'
 import FiltroStock from './FiltroStock'
 import TablaStock from './TablaStock'
 
-export const metadata: Metadata = { title: 'Stock de productos' }
+export const metadata: Metadata = { title: 'Inventario' }
 export const dynamic = 'force-dynamic'
 
 export default async function PaginaStockProductos({
@@ -49,8 +49,8 @@ export default async function PaginaStockProductos({
   return (
     <div>
       <Encabezado
-        titulo="Stock de productos"
-        descripcion="Ramos ya armados esperando cliente. La mayoría se arma por pedido, así que es normal ver ceros: esto sirve para lo que se deja hecho."
+        titulo="Inventario"
+        descripcion="Ramos ya armados. Es normal ver ceros: casi todo se arma por pedido."
         modulo="inventario"
         permisos={sesion.permisos}
       />
@@ -74,8 +74,8 @@ export default async function PaginaStockProductos({
           enlaceBase={sesion.permisos.has('maestro.ver') ? '/productos' : undefined}
         />
       )}
-      <p className="mt-3 text-xs text-tinta-suave">
-        Al marcar un pedido como entregado, lo que llevaba se descuenta solo.
+      <p className="mt-3 text-sm text-tinta-suave">
+        Al entregar un pedido, se descuenta solo.
       </p>
     </div>
   )

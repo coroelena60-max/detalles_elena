@@ -32,8 +32,7 @@ export default function NuevaCompra({ proveedores }: { proveedores: { id: number
     >
       <h2 className="text-sm font-semibold">Nueva compra</h2>
       <p className="mt-1 text-xs text-tinta-suave">
-        Arranca como borrador: cargás los insumos y cuando llega la mercadería la marcás como
-        recibida. Recién ahí entra al stock.
+        Cuando llegue la mercadería, marcala como recibida.
       </p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div>
@@ -60,7 +59,7 @@ export default function NuevaCompra({ proveedores }: { proveedores: { id: number
       </div>
       <div className="mt-4 flex gap-2">
         <button type="submit" disabled={pendiente} className={BOTON}>
-          {pendiente ? 'Creando…' : 'Crear y cargar insumos'}
+          {pendiente ? 'Creando…' : 'Crear y cargar materiales'}
         </button>
         <button type="button" onClick={() => setAbierto(false)} className={BOTON_SECUNDARIO}>
           Cancelar

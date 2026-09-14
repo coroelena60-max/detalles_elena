@@ -69,7 +69,7 @@ export default async function PaginaGanancias({
     <div>
       <Encabezado
         titulo="Ganancias"
-        descripcion="Cuánto dejó la tienda: lo vendido, menos lo que se compró para producir, menos los gastos."
+        descripcion="Lo vendido, menos compras y gastos."
         modulo="contabilidad"
         permisos={sesion.permisos}
       >
@@ -108,7 +108,7 @@ export default async function PaginaGanancias({
                 />
                 <Linea
                   signo="−"
-                  etiqueta="Compras de insumos"
+                  etiqueta="Compras de materiales"
                   ayuda="Compras recibidas: papel, cinta, peluches, cajas…"
                   valor={Number(r.compras)}
                 />
@@ -126,10 +126,8 @@ export default async function PaginaGanancias({
                   fuerte
                 />
               </div>
-              <p className="mt-4 rounded-lg bg-fondo px-3 py-2 text-xs text-tinta-suave">
-                Es una cuenta de caja simple: resta las compras del período completas, aunque
-                parte de ese material todavía esté guardado sin usar. Un mes con una compra
-                grande puede verse flojo y el siguiente, mejor de lo que fue.
+              <p className="mt-4 rounded-lg bg-fondo px-3 py-2 text-sm text-tinta-suave">
+                Un mes con una compra grande puede verse flojo.
               </p>
             </section>
 

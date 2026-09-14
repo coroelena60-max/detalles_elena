@@ -9,7 +9,7 @@ import { exigirPermiso } from '@/lib/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import Envoltorios from './Envoltorios'
 
-export const metadata: Metadata = { title: 'Producto personalizado' }
+export const metadata: Metadata = { title: 'Flores y envoltorios' }
 export const dynamic = 'force-dynamic'
 
 export default async function PaginaPersonalizado() {
@@ -67,8 +67,8 @@ export default async function PaginaPersonalizado() {
   return (
     <div>
       <Encabezado
-        titulo="Producto personalizado"
-        descripcion="Las piezas con las que el cliente arma su ramo en el catálogo: un envoltorio y los extras que entren en él."
+        titulo="Flores y envoltorios"
+        descripcion="Con esto el cliente arma su propio ramo: envoltorio y flores."
         modulo="maestro"
         permisos={sesion.permisos}
       >
@@ -83,9 +83,8 @@ export default async function PaginaPersonalizado() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold">Extras</h2>
-            <p className="text-xs text-tinta-suave">
-              Se agregan a un ramo y también se venden sueltos. Los <strong>espacios</strong> son lo que
-              ocupan dentro del envoltorio.
+            <p className="text-sm text-tinta-suave">
+              Van dentro de un ramo o se venden sueltos.
             </p>
           </div>
           {puedeEditar && (
@@ -143,10 +142,8 @@ export default async function PaginaPersonalizado() {
 
       <section className="mt-8">
         <h2 className="text-base font-semibold">Envoltorios</h2>
-        <p className="text-xs text-tinta-suave">
-          Estilo × tamaño. La <strong>capacidad</strong> es cuántos espacios de extras entran: es la regla
-          que el catálogo usa para no dejar armar un ramo imposible. Los cambios se ven en el catálogo al
-          instante.
+        <p className="text-sm text-tinta-suave">
+          Cada tamaño tiene cuántos lugares de flores entran.
         </p>
         <Envoltorios envoltorios={envoltorios} puedeEditar={puedeEditar} />
       </section>

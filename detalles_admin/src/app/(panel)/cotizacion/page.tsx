@@ -31,7 +31,7 @@ export default async function PaginaCotizaciones({
     <div>
       <Encabezado
         titulo="Cotización"
-        descripcion="La calculadora de precios: lo que compraste, lo que usaste, los extras y el tiempo. Te dice cuánto cuesta y a cuánto venderlo."
+        descripcion="Calcula cuánto cuesta hacer un ramo y a cuánto venderlo."
         modulo="cotizacion"
         permisos={sesion.permisos}
       >

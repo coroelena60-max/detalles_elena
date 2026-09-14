@@ -27,7 +27,7 @@ const ENTIDADES: Record<string, string> = {
   extra: 'Extra',
   envoltorio: 'Envoltorio',
   categoria: 'Categoría',
-  insumo: 'Insumo',
+  insumo: 'Material',
   extra_insumo: 'Receta de un extra',
   proveedor: 'Proveedor',
   compra: 'Compra',
@@ -133,7 +133,7 @@ export default async function PaginaBitacora({
     <div>
       <Encabezado
         titulo="Bitácora"
-        descripcion="Elegí un rango de fechas y un usuario: aparece todo lo que hizo en el sistema. Se escribe sola y no se puede borrar."
+        descripcion="Todo lo que hizo cada persona. No se puede borrar."
         modulo="administracion"
         permisos={sesion.permisos}
       />
