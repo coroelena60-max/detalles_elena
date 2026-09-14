@@ -1,6 +1,6 @@
 import Link from 'next/link'
+import BotonesContacto from '@/components/BotonesContacto'
 import Marca from '@/components/Marca'
-import { numeroWhatsappVisible } from '@/lib/whatsapp'
 
 export default function PieDePagina() {
   const anio = new Date().getFullYear()
@@ -10,8 +10,7 @@ export default function PieDePagina() {
         <div>
           <Marca />
           <p className="mt-3 text-sm text-tinta-suave">
-            Ramos, carteras y detalles con flores hechas a mano. Cotoca y Santa Cruz
-            de la Sierra.
+            Flores hechas a mano · Cotoca y Santa Cruz
           </p>
         </div>
         <nav aria-label="Secciones">
@@ -25,13 +24,8 @@ export default function PieDePagina() {
         </nav>
         <div>
           <h2 className="text-sm font-semibold">Contacto</h2>
-          <ul className="mt-3 space-y-2 text-sm text-tinta-suave">
-            <li>WhatsApp {numeroWhatsappVisible()}</li>
-            <li>TikTok @detalles_elenac</li>
-          </ul>
-          <p className="mt-4 text-xs text-tinta-suave">
-            Los pedidos se confirman por WhatsApp. El envío se cotiza aparte.
-          </p>
+          <BotonesContacto className="mt-3" />
+          <p className="mt-3 text-xs text-tinta-suave">El envío se cotiza aparte.</p>
         </div>
       </div>
       <div className="contenedor flex flex-wrap gap-x-4 gap-y-2 pb-8 text-xs text-tinta-suave">

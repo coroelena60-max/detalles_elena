@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { enlaceConsultaWhatsapp, numeroWhatsappVisible } from '@/lib/whatsapp'
+import BotonesContacto from '@/components/BotonesContacto'
+import { numeroWhatsappVisible } from '@/lib/whatsapp'
 
 export const metadata: Metadata = { title: 'Información' }
 
@@ -26,28 +27,10 @@ export default function PaginaInformacion() {
 
         <section className="rounded-2xl border border-rosa-200 bg-white p-5">
           <h2 className="text-base font-semibold">Contacto y redes</h2>
-          <ul className="mt-3 space-y-2 text-sm">
-            <li>
-              <a
-                href={enlaceConsultaWhatsapp()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-rosa-700 hover:underline"
-              >
-                WhatsApp {numeroWhatsappVisible()}
-              </a>
-            </li>
-            <li>
-              <a
-                href="https://www.tiktok.com/@detalles_elenac"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-rosa-700 hover:underline"
-              >
-                TikTok @detalles_elenac
-              </a>
-            </li>
-          </ul>
+          <BotonesContacto className="mt-3" />
+          <p className="mt-3 text-sm text-tinta-suave">
+            WhatsApp {numeroWhatsappVisible()} · TikTok @detalles_elenac
+          </p>
         </section>
 
         <section className="rounded-2xl border border-rosa-200 bg-white p-5">

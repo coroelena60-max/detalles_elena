@@ -18,6 +18,19 @@
 
   /* Pila del sistema: cero peticiones externas, clave para 4G */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Ramo de la portada: flota y su sombra en el piso se achica cuando sube */
+  --animate-flotar: flotar 6s ease-in-out infinite;
+  --animate-sombra-flotar: sombra-flotar 6s ease-in-out infinite;
+
+  @keyframes flotar {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50% { transform: translateY(-14px) rotate(1deg); }
+  }
+  @keyframes sombra-flotar {
+    0%, 100% { transform: scaleX(1); opacity: 0.55; }
+    50% { transform: scaleX(0.8); opacity: 0.3; }
+  }
 }
 
 html {
