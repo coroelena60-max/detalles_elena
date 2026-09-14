@@ -555,6 +555,45 @@ export type Database = {
           },
         ]
       }
+      cotizacion_otro: {
+        Row: {
+          concepto: string
+          cotizacion_id: number
+          id: number
+          monto: number
+          orden: number
+        }
+        Insert: {
+          concepto: string
+          cotizacion_id: number
+          id?: never
+          monto: number
+          orden?: number
+        }
+        Update: {
+          concepto?: string
+          cotizacion_id?: number
+          id?: never
+          monto?: number
+          orden?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotizacion_otro_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "cotizacion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotizacion_otro_cotizacion_id_fkey"
+            columns: ["cotizacion_id"]
+            isOneToOne: false
+            referencedRelation: "v_cotizacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entrega: {
         Row: {
           created_at: string

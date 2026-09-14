@@ -15,13 +15,21 @@ export default async function PaginaCotizacion({ params }: { params: Promise<{ i
   if (!Number.isInteger(id)) notFound()
   const sb = await clienteServidor()
 
-  const [{ data: c }, { data: mats }, { data: exts }, opciones] = await Promise.all([
+  const [{ data: c }, { data: mats }, { data: exts }, { data: otrs }, opciones] = await Promise.all([
     sb.from('cotizacion').select('*').eq('id', id).maybeSingle(),
     sb.from('cotizacion_material').select('*').eq('cotizacion_id', id).order('orden'),
     sb.from('cotizacion_extra').select('*').eq('cotizacion_id', id).order('orden'),
+    sb.from('cotizacion_otro').select('concepto, monto').eq('cotizacion_id', id).order('orden'),
     cargarOpciones(sesion),
   ])
   if (!c) notFound()
+
+  // sin líneas pero con monto (base sin la 0025): se muestra como un solo gasto
+  const otros = otrs?.length
+    ? otrs.map((o) => ({ concepto: o.concepto, monto: Number(o.monto) }))
+    : Number(c.otros_monto) > 0
+      ? [{ concepto: 'Otros gastos', monto: Number(c.otros_monto) }]
+      : []
 
   return (
     <div>
@@ -43,7 +51,7 @@ export default async function PaginaCotizacion({ params }: { params: Promise<{ i
             minutos: c.minutos,
             costoHora: Number(c.costo_hora),
             otrosPct: Number(c.otros_pct),
-            otrosMonto: Number(c.otros_monto),
+            otros,
             margenPct: Number(c.margen_pct),
             precioFinal: c.precio_final === null ? null : Number(c.precio_final),
             materiales: (mats ?? []).map((m) => ({

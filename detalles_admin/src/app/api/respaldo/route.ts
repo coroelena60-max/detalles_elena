@@ -22,7 +22,7 @@ const TABLAS: Tabla[] = [
   'proveedor', 'insumo', 'compra', 'compra_item', 'movimiento_inventario',
   'extra_insumo', 'envoltorio_insumo', 'producto_insumo', 'parametro',
   // contabilidad y cotización
-  'categoria_gasto', 'gasto', 'cotizacion', 'cotizacion_material', 'cotizacion_extra',
+  'categoria_gasto', 'gasto', 'cotizacion', 'cotizacion_material', 'cotizacion_extra', 'cotizacion_otro',
   // administración
   'perfil', 'rol', 'permiso', 'rol_permiso', 'usuario_rol', 'bitacora',
 ]

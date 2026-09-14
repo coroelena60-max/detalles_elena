@@ -16,7 +16,7 @@ Dos aplicaciones independientes sobre una sola base de datos Supabase.
 |---|---|---|---|
 | `catalogo_web/` | Catálogo público. El cliente elige productos, arma el carrito, confirma y se crea el pedido en BD. El código del pedido se manda al WhatsApp de la tienda y la venta se cierra ahí. | 3000 | **En uso** (entran pedidos reales) |
 | `detalles_admin/` | Panel administrativo de la tienda. | 3001 | **Todos los módulos construidos**, falta probarlos con datos reales |
-| `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | 0001–0024 aplicadas en el proyecto real |
+| `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | 0001–0025 aplicadas en el proyecto real |
 | `assets/catalogo/` | 33 fotos optimizadas a WebP, ya subidas al bucket `catalogo`. | — | Subidas |
 
 El catálogo y todos los módulos del panel (según el diagrama del dueño: administración,
@@ -145,12 +145,13 @@ Fuente de verdad: `supabase/migrations/`. Probadas contra Postgres 16 local
 | `0022_venta_sin_cliente.sql` | cliente genérico **S/N** (teléfono `0000000`, protegido contra renombre/borrado); `crear_venta_mostrador(p_cliente => {"sin_cliente": true})` lo usa y el panel lo muestra como **S/C** |
 | `0023_cotizacion.sql` | módulo **Cotización**: `cotizacion` + `cotizacion_material` + `cotizacion_extra`, vista `v_cotizacion` (la cuenta), `guardar_cotizacion()`, `convertir_cotizacion_en_producto()`, y `crear_venta_mostrador()` acepta líneas `{"tipo":"cotizacion"}`; permisos `cotizacion.ver/editar` |
 | `0024_pedidos_agenda_respaldo.sql` | permisos `pedido.ver/editar` (catálogo) separados de `venta.*` (mostrador) con RLS por `canal` y `exigir_permiso_pedido()` en las RPC; `pedido.fecha_compromiso` + `programar_pedido()` + vista `v_agenda` (minutos de taller); permiso `respaldo.descargar` |
+| `0025_cotizacion_otros_gastos.sql` | `cotizacion_otro` (concepto + monto), varios gastos fijos por cotización; `guardar_cotizacion()` acepta `p.otros` y guarda la suma en `otros_monto` (la vista no cambia); sin `p.otros` usa `otros_monto` como antes |
 
 ### Cómo aplicarlas
 
 **En la base real (`nrwamzgxwttgvaqqodfp`) se aplica SOLO la migración nueva**: Supabase →
 SQL Editor → pegar ese único archivo `supabase/migrations/NNNN_...sql` → Run. Nunca todas
-juntas. Las 24 actuales ya están aplicadas.
+juntas. 0001–0025 ya están aplicadas.
 
 `APLICAR_TODO.sql` **ya no existe** (se borró el 2026-09-13). Esa noche una sesión aplicó
 0023 y 0024 corriendo el archivo completo sobre la base real "para verificar que era
@@ -426,7 +427,7 @@ Reglas del panel:
   función nueva que escribe datos, lleva su `exigir_permiso` en la primera línea.
 - **Cotización = calculadora, no mueve stock.** Material: costo = precio pagado ÷ (cantidad comprada × factor
   de presentación, ej. docena = 12) × cantidad usada. Extras a su costo por receta (editable por línea). Mano de
-  obra = minutos × Bs/hora. Otros = % sobre lo anterior + monto fijo. Precio sugerido = costo × (1 + margen) redondeado
+  obra = minutos × Bs/hora. Otros = % sobre lo anterior + la suma de los gastos fijos (`cotizacion_otro`, uno por línea: delivery, bolsa…; 0025). Precio sugerido = costo × (1 + margen) redondeado
   a 5; `precio_final` lo pisa. La cuenta vive en `v_cotizacion` (la pantalla la repite solo para mostrar en vivo).
   Vendida en mostrador entra como línea `personalizado` con `cotizacion_id`; sus extras van a Bs 0 para que la
   entrega descuente stock.
@@ -590,7 +591,8 @@ Pendiente, en orden:
 3. **Cargar insumos, proveedores y recetas** desde el panel (o por seed) para que el
    costeo deje de contar solo la mano de obra.
 4. Probar los módulos del panel con datos reales y ajustar lo que la dueña encuentre.
-   Las 24 migraciones están aplicadas en el proyecto real (verificado el 2026-09-13).
+   0001–0025 aplicadas en el proyecto real (0025 el 2026-09-14, sola; los tipos del panel se
+   regeneraron desde la base y coinciden con `database.ts`).
    Para sumar a Elena: crear su cuenta en Supabase (Authentication → Add user) y darle
    el rol desde `/usuarios`; el SQL Editor ya no hace falta.
 5. Tipos de la BD: `catalogo_web/src/types/database.ts` sigue escrito a mano y

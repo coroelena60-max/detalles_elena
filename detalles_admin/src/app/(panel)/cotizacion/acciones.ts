@@ -23,6 +23,11 @@ export interface ExtraCotizacion {
   costoUnitario: number
 }
 
+export interface OtroGastoCotizacion {
+  concepto: string
+  monto: number
+}
+
 export interface DatosCotizacion {
   id: number | null
   nombre: string
@@ -30,11 +35,12 @@ export interface DatosCotizacion {
   minutos: number
   costoHora: number
   otrosPct: number
-  otrosMonto: number
   margenPct: number
   precioFinal: number | null
   materiales: MaterialCotizacion[]
   extras: ExtraCotizacion[]
+  /** gastos fijos (delivery, bolsa, tarjeta…); la base guarda también la suma en otros_monto */
+  otros: OtroGastoCotizacion[]
 }
 
 const bien = (n: number) => Number.isFinite(n) && n >= 0
@@ -42,9 +48,14 @@ const bien = (n: number) => Number.isFinite(n) && n >= 0
 /** Guarda cabecera y líneas juntas. La cuenta la hace la base (v_cotizacion). */
 export async function guardarCotizacion(d: DatosCotizacion): Promise<Resultado & { id?: number }> {
   if (d.nombre.trim().length < 2) return { ok: false, mensaje: 'Poné un nombre a la cotización.' }
-  if (![d.minutos, d.costoHora, d.otrosPct, d.otrosMonto, d.margenPct].every(bien)) {
+  if (![d.minutos, d.costoHora, d.otrosPct, d.margenPct].every(bien)) {
     return { ok: false, mensaje: 'Revisá los números: no pueden ser negativos.' }
   }
+  const otros = d.otros.filter((o) => o.concepto.trim() !== '' || o.monto !== 0)
+  for (const o of otros) {
+    if (!bien(o.monto)) return { ok: false, mensaje: `Revisá el monto de "${o.concepto.trim() || 'otro gasto'}".` }
+  }
+  const otrosMonto = Math.round(otros.reduce((s, o) => s + o.monto, 0) * 100) / 100
   const materiales = d.materiales.filter((m) => m.nombre.trim() !== '')
   for (const m of materiales) {
     if (!(m.cantidadCompra > 0)) return { ok: false, mensaje: `"${m.nombre}": ¿cuánto compraste? Tiene que ser más que cero.` }
@@ -63,7 +74,9 @@ export async function guardarCotizacion(d: DatosCotizacion): Promise<Resultado &
       minutos: Math.round(d.minutos),
       costo_hora: d.costoHora,
       otros_pct: d.otrosPct,
-      otros_monto: d.otrosMonto,
+      // la suma va igual por si la base todavía no tiene la 0025
+      otros_monto: otrosMonto,
+      otros: otros.map((o) => ({ concepto: o.concepto.trim(), monto: o.monto })),
       margen_pct: d.margenPct,
       precio_final: d.precioFinal,
       materiales: materiales.map((m) => ({

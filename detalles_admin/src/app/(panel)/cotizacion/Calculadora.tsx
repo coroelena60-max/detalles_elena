@@ -78,6 +78,12 @@ interface FilaExtra {
   costoUnitario: string
 }
 
+interface FilaOtro {
+  clave: string
+  concepto: string
+  monto: string
+}
+
 const num = (t: string) => {
   const n = Number(String(t).replace(',', '.'))
   return Number.isFinite(n) ? n : 0
@@ -117,7 +123,11 @@ export default function Calculadora({ opciones, inicial }: { opciones: Opciones;
   const [minutos, setMinutos] = useState(String(d?.minutos ?? ''))
   const [costoHora, setCostoHora] = useState(String(d?.costoHora ?? opciones.costoHora))
   const [otrosPct, setOtrosPct] = useState(String(d?.otrosPct ?? 0))
-  const [otrosMonto, setOtrosMonto] = useState(String(d?.otrosMonto ?? 0))
+  const [otros, setOtros] = useState<FilaOtro[]>(
+    d?.otros.length
+      ? d.otros.map((o) => ({ clave: nuevaClave(), concepto: o.concepto, monto: String(o.monto) }))
+      : [otroVacio()],
+  )
   const [margen, setMargen] = useState(d?.margenPct ?? opciones.margen)
   const [precioFinal, setPrecioFinal] = useState(d?.precioFinal != null ? String(d.precioFinal) : '')
   const [buscarExtra, setBuscarExtra] = useState('')
@@ -136,6 +146,14 @@ export default function Calculadora({ opciones, inicial }: { opciones: Opciones;
     }
   }
 
+  function otroVacio(): FilaOtro {
+    return { clave: nuevaClave(), concepto: '', monto: '' }
+  }
+
+  function cambiarOtro(clave: string, cambios: Partial<FilaOtro>) {
+    setOtros((os) => os.map((o) => (o.clave === clave ? { ...o, ...cambios } : o)))
+  }
+
   const extraDe = useMemo(() => new Map(opciones.extras.map((e) => [e.id, e])), [opciones.extras])
 
   // ---- la cuenta (la misma que hace v_cotizacion en la base) ----------------
@@ -148,7 +166,8 @@ export default function Calculadora({ opciones, inicial }: { opciones: Opciones;
   const costoMateriales = lineasMat.reduce((s, m) => s + m.costo, 0)
   const costoExtras = extras.reduce((s, e) => s + dos(num(e.costoUnitario) * num(e.cantidad)), 0)
   const costoManoObra = dos((num(minutos) / 60) * num(costoHora))
-  const costoOtros = dos(((costoMateriales + costoExtras + costoManoObra) * num(otrosPct)) / 100 + num(otrosMonto))
+  const otrosFijos = dos(otros.reduce((s, o) => s + dos(num(o.monto)), 0))
+  const costoOtros = dos(((costoMateriales + costoExtras + costoManoObra) * num(otrosPct)) / 100 + otrosFijos)
   const costoTotal = dos(costoMateriales + costoExtras + costoManoObra + costoOtros)
   const sugerido = Math.round((costoTotal * (1 + margen / 100)) / 5) * 5
   const precio = precioFinal.trim() === '' ? sugerido : num(precioFinal)
@@ -194,7 +213,6 @@ export default function Calculadora({ opciones, inicial }: { opciones: Opciones;
       minutos: num(minutos),
       costoHora: num(costoHora),
       otrosPct: num(otrosPct),
-      otrosMonto: num(otrosMonto),
       margenPct: margen,
       precioFinal: precioFinal.trim() === '' ? null : num(precioFinal),
       materiales: lineasMat
@@ -214,6 +232,9 @@ export default function Calculadora({ opciones, inicial }: { opciones: Opciones;
         cantidad: num(e.cantidad),
         costoUnitario: num(e.costoUnitario),
       })),
+      otros: otros
+        .filter((o) => o.concepto.trim() !== '' || num(o.monto) !== 0)
+        .map((o) => ({ concepto: o.concepto, monto: num(o.monto) })),
     }
   }
 
@@ -380,7 +401,7 @@ export default function Calculadora({ opciones, inicial }: { opciones: Opciones;
         {/* ---------------- Tiempo y otros ---------------- */}
         <section className="tarjeta p-4">
           <h2 className="text-sm font-semibold">3. Tiempo de armado y otros gastos</h2>
-          <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
             <label className="text-xs text-tinta-suave">
               Minutos de armado
               <input inputMode="numeric" value={minutos} onChange={(e) => setMinutos(e.target.value)} placeholder="45" className={`${campo} mt-0.5`} />
@@ -389,18 +410,58 @@ export default function Calculadora({ opciones, inicial }: { opciones: Opciones;
               Bs por hora
               <input inputMode="decimal" value={costoHora} onChange={(e) => setCostoHora(e.target.value)} className={`${campo} mt-0.5`} />
             </label>
-            <label className="text-xs text-tinta-suave" title="Silicona, hilo, luz, desgaste de herramientas">
+            <label className="col-span-2 text-xs text-tinta-suave sm:col-span-1" title="Silicona, hilo, luz, desgaste de herramientas">
               Otros (% extra)
-              <input inputMode="decimal" value={otrosPct} onChange={(e) => setOtrosPct(e.target.value)} className={`${campo} mt-0.5`} />
-            </label>
-            <label className="text-xs text-tinta-suave" title="Delivery, bolsa, tarjeta…">
-              Otros (Bs fijos)
-              <input inputMode="decimal" value={otrosMonto} onChange={(e) => setOtrosMonto(e.target.value)} className={`${campo} mt-0.5`} />
+              <input inputMode="decimal" value={otrosPct} onChange={(e) => setOtrosPct(e.target.value)} placeholder="0" className={`${campo} mt-0.5`} />
             </label>
           </div>
           <p className="mt-2 text-xs text-tinta-suave">
             Mano de obra: {numero(num(minutos))} min × {bs(num(costoHora))}/h = <strong className="text-tinta">{bs(costoManoObra)}</strong>
           </p>
+
+          <div className="mt-4 border-t border-linea pt-3">
+            <div className="flex items-baseline justify-between">
+              <h3 className="text-xs font-semibold">Otros gastos fijos</h3>
+              <span className="text-sm font-semibold tabular-nums">{bs(otrosFijos)}</span>
+            </div>
+            <p className="text-xs text-tinta-suave">Delivery, bolsa, tarjeta, pasaje… uno por línea.</p>
+            <ul className="mt-2 space-y-2">
+              {otros.map((o) => (
+                <li key={o.clave} className="flex items-center gap-2">
+                  <input
+                    value={o.concepto}
+                    onChange={(e) => cambiarOtro(o.clave, { concepto: e.target.value })}
+                    placeholder="Concepto (ej. delivery)"
+                    aria-label="Concepto del gasto"
+                    maxLength={120}
+                    className={`${campo} min-w-0 flex-1`}
+                  />
+                  <label className="flex shrink-0 items-center gap-1 text-xs text-tinta-suave">
+                    Bs
+                    <input
+                      inputMode="decimal"
+                      value={o.monto}
+                      onChange={(e) => cambiarOtro(o.clave, { monto: e.target.value })}
+                      placeholder="0"
+                      aria-label="Monto del gasto"
+                      className={`${campo} w-20`}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setOtros((os) => (os.length === 1 ? [otroVacio()] : os.filter((x) => x.clave !== o.clave)))}
+                    aria-label="Quitar gasto"
+                    className="grid size-8 shrink-0 place-items-center rounded-full text-tinta-suave hover:bg-alerta-suave hover:text-alerta"
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button type="button" onClick={() => setOtros((os) => [...os, otroVacio()])} className="mt-2 w-full rounded-lg border border-dashed border-rosa-300 py-2 text-sm text-rosa-700 hover:bg-rosa-50">
+              ＋ Agregar otro gasto
+            </button>
+          </div>
         </section>
       </fieldset>
 
