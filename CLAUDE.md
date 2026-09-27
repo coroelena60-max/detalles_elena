@@ -16,7 +16,7 @@ Dos aplicaciones independientes sobre una sola base de datos Supabase.
 |---|---|---|---|
 | `catalogo_web/` | Catálogo público. El cliente elige productos, arma el carrito, confirma y se crea el pedido en BD. El código del pedido se manda al WhatsApp de la tienda y la venta se cierra ahí. | 3000 | **En uso** (entran pedidos reales) |
 | `detalles_admin/` | Panel administrativo de la tienda. | 3001 | **Todos los módulos construidos**, falta probarlos con datos reales |
-| `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | 0001–0026 aplicadas en el proyecto real; **0027 escrita, falta aplicarla** |
+| `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | 0001–0027 aplicadas en el proyecto real |
 | `assets/catalogo/` | 33 fotos optimizadas a WebP, ya subidas al bucket `catalogo`. | — | Subidas |
 
 El catálogo y todos los módulos del panel (según el diagrama del dueño: administración,
@@ -160,7 +160,7 @@ Fuente de verdad: `supabase/migrations/`. Probadas contra Postgres 16 local
 
 **En la base real (`nrwamzgxwttgvaqqodfp`) se aplica SOLO la migración nueva**: Supabase →
 SQL Editor → pegar ese único archivo `supabase/migrations/NNNN_...sql` → Run. Nunca todas
-juntas. 0001–0026 ya están aplicadas; la 0027 está escrita y probada en PGlite, falta aplicarla (el panel ya la usa).
+juntas. 0001–0027 ya están aplicadas (la 0027 el 2026-09-26).
 
 Sin acceso al SQL Editor, la alternativa es `supabase/aplicar-migracion.ps1`, que manda **un**
 archivo a la API de Supabase (`/v1/projects/…/database/query`):
@@ -682,19 +682,18 @@ Pendiente, en orden:
 3. **Cargar insumos, proveedores y recetas** desde el panel (o por seed) para que el
    costeo deje de contar solo la mano de obra.
 4. Probar los módulos del panel con datos reales y ajustar lo que la dueña encuentre.
-   0001–0026 aplicadas en el proyecto real (0025 y 0026 el 2026-09-14, cada una sola; los tipos del
-   panel se regeneraron desde la base y coinciden con `database.ts`). La **0027** (devolver cobro) está
-   escrita y los tipos de `database.ts` se completaron a mano: aplicarla antes de publicar el panel, que
-   ya lee `pago.devuelto_at` (sin ella la ficha de venta no muestra los cobros).
-   Datos de prueba que quedaron en la base real (2026-09-14): PED-00005 (venta de Bs 1 cancelada, con su
-   cobro), PED-00006 (Bs 1 cobrada y entregada; la Malla se repuso con una devolución de inventario) y
+   0001–0027 aplicadas en el proyecto real (0025 y 0026 el 2026-09-14; la **0027** el 2026-09-26 con
+   `aplicar-migracion.ps1`, ver §4). Los tipos del panel se regeneraron desde la base hasta la 0026 y los
+   de la 0027 se completaron a mano en `database.ts`: regenerarlos en la próxima migración.
+   Datos de prueba que quedaron en la base real (2026-09-14): PED-00005 (venta de Bs 1 cancelada; su
+   cobro se devolvió el 2026-09-26 probando `devolver_cobro`, así que quedó tachado y en Bs 0 cobrado),
+   PED-00006 (Bs 1 cobrada y entregada; la Malla se repuso con una devolución de inventario) y
    PRD-002 "PRUEBA panel - borrar" (oculto, sin foto). Se pueden borrar desde el SQL Editor si molestan.
-   **Pendiente en Supabase → Authentication** (auditoría 2026-09-14): el registro público está abierto
-   (`disable_signup: false`, contradice "no hay registro público") y la contraseña mínima es 6. Cerrar
-   el registro (las cuentas se siguen creando con Add user) y subir el mínimo a 10. Además `site_url`
-   quedó en `http://localhost:3000`. Los tres se arreglan de una con
-   `powershell -ExecutionPolicy Bypass -File supabase/ajustar-auth.ps1 [-SiteUrl https://…]`
-   (el `-SiteUrl` recién cuando el panel tenga dominio).
+   **Supabase → Authentication** (auditoría 2026-09-14, arreglado el 2026-09-26 con `ajustar-auth.ps1`):
+   el registro público quedó cerrado (`disable_signup: true`; las cuentas se siguen creando con Add user)
+   y la contraseña mínima en 10. Falta `site_url`, que sigue en `http://localhost:3000`: se corrige
+   cuando el panel tenga dominio, con
+   `powershell -ExecutionPolicy Bypass -File supabase/ajustar-auth.ps1 -SiteUrl https://…`.
    Para sumar a Elena: crear su cuenta en Supabase (Authentication → Add user) y darle
    el rol desde `/usuarios`; el SQL Editor ya no hace falta.
 5. Tipos de la BD: `catalogo_web/src/types/database.ts` sigue escrito a mano y
