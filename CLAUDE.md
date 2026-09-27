@@ -162,6 +162,18 @@ Fuente de verdad: `supabase/migrations/`. Probadas contra Postgres 16 local
 SQL Editor → pegar ese único archivo `supabase/migrations/NNNN_...sql` → Run. Nunca todas
 juntas. 0001–0026 ya están aplicadas; la 0027 está escrita y probada en PGlite, falta aplicarla (el panel ya la usa).
 
+Sin acceso al SQL Editor, la alternativa es `supabase/aplicar-migracion.ps1`, que manda **un**
+archivo a la API de Supabase (`/v1/projects/…/database/query`):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File supabase/aplicar-migracion.ps1 0027_devolver_cobro.sql
+```
+
+Pide confirmación y después el access token, que **lo escribe la persona** (`-AsSecureString`,
+se borra de memoria al terminar): no se guarda en ningún archivo ni se le pasa a Claude —
+Claude no ingresa tokens ni contraseñas, así que estos scripts los corre la dueña.
+Su gemelo es `supabase/ajustar-auth.ps1`, para la configuración de Authentication.
+
 `APLICAR_TODO.sql` **ya no existe** (se borró el 2026-09-13). Esa noche una sesión aplicó
 0023 y 0024 corriendo el archivo completo sobre la base real "para verificar que era
 idempotente", y los seeds pisaron precios, `destacado` y fotos que la dueña había cambiado
@@ -680,7 +692,9 @@ Pendiente, en orden:
    **Pendiente en Supabase → Authentication** (auditoría 2026-09-14): el registro público está abierto
    (`disable_signup: false`, contradice "no hay registro público") y la contraseña mínima es 6. Cerrar
    el registro (las cuentas se siguen creando con Add user) y subir el mínimo a 10. Además `site_url`
-   quedó en `http://localhost:3000`.
+   quedó en `http://localhost:3000`. Los tres se arreglan de una con
+   `powershell -ExecutionPolicy Bypass -File supabase/ajustar-auth.ps1 [-SiteUrl https://…]`
+   (el `-SiteUrl` recién cuando el panel tenga dominio).
    Para sumar a Elena: crear su cuenta en Supabase (Authentication → Add user) y darle
    el rol desde `/usuarios`; el SQL Editor ya no hace falta.
 5. Tipos de la BD: `catalogo_web/src/types/database.ts` sigue escrito a mano y
