@@ -53,6 +53,14 @@ export default function AccionesPedido({
   const [metodo, setMetodo] = useState<MetodoPago>('efectivo')
   const [referencia, setReferencia] = useState('')
 
+  // Si el saldo cambió en el servidor (se rebajó el precio, se cobró una parte),
+  // el "¿Cuánto paga?" tiene que seguirlo: si no, queda ofreciendo el monto viejo.
+  const [saldoVisto, setSaldoVisto] = useState(saldo)
+  if (saldo !== saldoVisto) {
+    setSaldoVisto(saldo)
+    setMonto(saldo > 0 ? String(saldo) : '')
+  }
+
   const siguiente = SIGUIENTE_ESTADO[estado]
   const cerrado = estado === 'entregado' || estado === 'cancelado'
   const paso = siguiente ? PASO[siguiente] : undefined

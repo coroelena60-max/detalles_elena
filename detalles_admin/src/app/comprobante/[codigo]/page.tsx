@@ -27,7 +27,7 @@ export default async function PaginaComprobante({ params }: { params: Promise<{ 
     .select(
       `id, codigo, canal, created_at, subtotal, descuento, costo_envio, total, tipo_entrega, fecha_compromiso,
        cliente:cliente_id (nombre, telefono),
-       items:pedido_item (id, nombre, cantidad, precio_unitario, subtotal, dedicatoria,
+       items:pedido_item (id, nombre, cantidad, precio_unitario, precio_lista, subtotal, dedicatoria,
                           extras:pedido_item_extra (nombre, cantidad))`,
     )
     .eq('codigo', codigo)
@@ -100,7 +100,14 @@ export default async function PaginaComprobante({ params }: { params: Promise<{ 
                     )}
                     {i.dedicatoria && <span className="block text-xs italic text-tinta-suave">«{i.dedicatoria}»</span>}
                   </td>
-                  <td className="py-2 pl-2 text-right tabular-nums">{bs(i.subtotal)}</td>
+                  <td className="py-2 pl-2 text-right tabular-nums">
+                    {bs(i.subtotal)}
+                    {i.precio_lista !== null && Number(i.precio_lista) > Number(i.precio_unitario) && (
+                      <span className="block text-xs text-tinta-suave line-through">
+                        {bs(Number(i.precio_lista) * i.cantidad)}
+                      </span>
+                    )}
+                  </td>
                 </tr>
               )
             })}

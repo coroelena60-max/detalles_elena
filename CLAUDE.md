@@ -16,7 +16,7 @@ Dos aplicaciones independientes sobre una sola base de datos Supabase.
 |---|---|---|---|
 | `catalogo_web/` | Catálogo público. El cliente elige productos, arma el carrito, confirma y se crea el pedido en BD. El código del pedido se manda al WhatsApp de la tienda y la venta se cierra ahí. | 3000 | **En uso** (entran pedidos reales) |
 | `detalles_admin/` | Panel administrativo de la tienda. | 3001 | **Todos los módulos construidos**, falta probarlos con datos reales |
-| `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | 0001–0027 aplicadas en el proyecto real |
+| `supabase/` | Migraciones SQL de la base de datos (fuente de verdad del esquema). | — | 0001–0028 aplicadas en el proyecto real |
 | `assets/catalogo/` | 33 fotos optimizadas a WebP, ya subidas al bucket `catalogo`. | — | Subidas |
 
 El catálogo y todos los módulos del panel (según el diagrama del dueño: administración,
@@ -53,7 +53,9 @@ inventario, maestro, compra, venta y reportes) están construidos. Lo que sigue 
 - Tailwind CSS v4, ESLint (config de Next)
 - Supabase: Postgres + Storage (+ Auth en fase 2 para el admin)
 - `@supabase/supabase-js` + `@supabase/ssr`
-- Admin además: `zod` + `react-hook-form`
+- Admin: **formularios nativos + server actions**, sin librería de formularios. `zod` y
+  `react-hook-form` estaban declarados sin usarse y se quitaron el 2026-10-08: si se
+  validan datos, se valida en la server action y, sobre todo, en la base (ver §5.5).
 - Catálogo además: `@vercel/analytics` (se sirve desde el mismo dominio, `/_vercel/insights`,
   por eso no rompe la CSP; está declarado en `/privacidad`)
 - Alias de imports: `@/*` → `src/*`
@@ -85,6 +87,19 @@ Dentro de cada app (`catalogo_web/`, `detalles_admin/`):
 No hay framework de tests configurado (ni Jest, ni Vitest, ni Playwright). La verificación
 hoy es `type-check` + `lint` + `build` + prueba manual del flujo en el navegador.
 Si se agregan tests, documentar acá cómo correr uno solo.
+
+Para la base sí hay un banco de pruebas: `supabase/probar-migraciones.mjs` corre **todas**
+las migraciones sobre una base vacía en PGlite (Postgres en WASM, sin Docker) y después
+prueba el circuito de venta. PGlite no está en el repo; se instala aparte, en una carpeta
+afuera, y desde ahí se llama al script (las instrucciones están en su cabecera):
+
+```powershell
+mkdir ..\tmp-pglite; cd ..\tmp-pglite
+corepack pnpm init; corepack pnpm add @electric-sql/pglite
+node C:\Users\LENOVO\source\detalles-elena\supabase\probar-migraciones.mjs C:\Users\LENOVO\source\detalles-elena\supabase\migrations
+```
+
+Correrlo **antes** de aplicar una migración nueva en la base real.
 
 Desde la raíz, sin `cd`: `corepack pnpm --dir detalles_admin type-check` (igual con
 `catalogo_web`). En `.claude/launch.json` están los servidores `catalogo` (:3000) y
@@ -150,23 +165,24 @@ Fuente de verdad: `supabase/migrations/`. Probadas contra Postgres 16 local
 | `0020_superadmin.sql` | rol `superadmin` con acceso total; el rol y las cuentas que lo tienen quedan **invisibles** para todos los demás |
 | `0021_contabilidad_reportes_y_candados.sql` | candado de permiso en todas las RPC del panel, `gasto` + `categoria_gasto`, `anular_compra()`/`anular_gasto()`, reportes por rango (`reporte_ventas`, `reporte_compras`, `reporte_ventas_confirmadas`, `reporte_ganancias`, `reporte_bitacora`), vistas `v_kardex` y `v_cliente_resumen`, bitácora sin cambios vacíos |
 | `0022_venta_sin_cliente.sql` | cliente genérico **S/N** (teléfono `0000000`, protegido contra renombre/borrado); `crear_venta_mostrador(p_cliente => {"sin_cliente": true})` lo usa y el panel lo muestra como **Cliente de paso** |
-| `0023_cotizacion.sql` | módulo **Cotización**: `cotizacion` + `cotizacion_material` + `cotizacion_extra`, vista `v_cotizacion` (la cuenta), `guardar_cotizacion()`, `convertir_cotizacion_en_producto()`, y `crear_venta_mostrador()` acepta líneas `{"tipo":"cotizacion"}`; permisos `cotizacion.ver/editar` |
+| `0023_cotizacion.sql` | módulo **Cotización**: `cotizacion` + `cotizacion_material` + `cotizacion_extra`, vista `v_cotizacion` (la cuenta), `guardar_cotizacion()`, `borrar_cotizacion()`, `convertir_cotizacion_en_producto()`, y `crear_venta_mostrador()` acepta líneas `{"tipo":"cotizacion"}`; permisos `cotizacion.ver/editar` |
 | `0024_pedidos_agenda_respaldo.sql` | permisos `pedido.ver/editar` (catálogo) separados de `venta.*` (mostrador) con RLS por `canal` y `exigir_permiso_pedido()` en las RPC; `pedido.fecha_compromiso` + `programar_pedido()` + vista `v_agenda` (minutos de taller); permiso `respaldo.descargar` |
 | `0025_cotizacion_otros_gastos.sql` | `cotizacion_otro` (concepto + monto), varios gastos fijos por cotización; `guardar_cotizacion()` acepta `p.otros` y guarda la suma en `otros_monto` (la vista no cambia); sin `p.otros` usa `otros_monto` como antes |
 | `0026_limites_y_candados.sql` | límite de pedidos del catálogo en la base (trigger en `pedido`, solo rol anon: 5 por cliente/hora, 40 en total/10 min), `marcar_pedido_enviado_whatsapp()` solo 2 h después de creado (los códigos son correlativos), `recalcular_pedido()` sin acceso directo y `recalcular_compra()` con `exigir_permiso` |
 | `0027_devolver_cobro.sql` | `pago.devuelto_at/devuelto_por/motivo_devolucion` (con check: sin motivo no hay devolución), `devolver_cobro(pago_id, motivo)` con `pago.registrar` + permiso de editar el pedido, `v_pedido_saldo` y "cobros por método" de `reporte_ventas_confirmadas` sin los cobros devueltos |
+| `0028_precio_venta_editable.sql` | **precio editable en el mostrador**: `pedido_item.precio_lista` (el precio de antes), `aplicar_precio_item()` (motor interno, sin acceso directo), `ajustar_item_venta(item, precio, extras)` con permiso por canal y bitácora, `crear_venta_mostrador()` acepta por línea `precio_unitario` y `extras_libres: [{nombre, precio}]`, vista `v_pedido_item_precio` y `rebajas` en `reporte_ventas()` |
 
 ### Cómo aplicarlas
 
 **En la base real (`nrwamzgxwttgvaqqodfp`) se aplica SOLO la migración nueva**: Supabase →
 SQL Editor → pegar ese único archivo `supabase/migrations/NNNN_...sql` → Run. Nunca todas
-juntas. 0001–0027 ya están aplicadas (la 0027 el 2026-09-26).
+juntas. 0001–0028 ya están aplicadas (la 0027 el 2026-09-26; la 0028 el 2026-10-24).
 
 Sin acceso al SQL Editor, la alternativa es `supabase/aplicar-migracion.ps1`, que manda **un**
 archivo a la API de Supabase (`/v1/projects/…/database/query`):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File supabase/aplicar-migracion.ps1 0027_devolver_cobro.sql
+powershell -ExecutionPolicy Bypass -File supabase/aplicar-migracion.ps1 0028_precio_venta_editable.sql
 ```
 
 Pide confirmación y después el access token, que **lo escribe la persona** (`-AsSecureString`,
@@ -189,11 +205,13 @@ idempotente", y los seeds pisaron precios, `destacado` y fotos que la dueña hab
    `public.producto` ya existe, así que sobre la base real no toca nada.
 3. Esta regla, escrita acá.
 
-Probado en PGlite (`@electric-sql/pglite` con `pgcrypto` y `unaccent`, más stubs de
-`auth.users`, `auth.uid()`, `storage.buckets/objects` y los roles `anon`, `authenticated`,
-`service_role`): base vacía → los mismos 16 productos, 24 composiciones, 18 extras,
-14 envoltorios y 17 fotos que antes; con ediciones del panel los seeds no cambian ninguna
-fila; y `base-nueva.sql` sobre una base con datos corta en el candado sin tocar nada.
+Probado en PGlite (stubs de `auth.users`, `auth.uid()`, `storage.buckets/objects`, los
+roles `anon`, `authenticated`, `service_role` y un `unaccent` casero; `pgcrypto` no hace
+falta): base vacía → los mismos 16 productos, 24 composiciones, 18 extras, 14 envoltorios
+y 17 fotos que antes; con ediciones del panel los seeds no cambian ninguna fila; y
+`base-nueva.sql` sobre una base con datos corta en el candado sin tocar nada. Eso quedó
+guardado en `supabase/probar-migraciones.mjs` (ver §3): 36 pasos, las 28 migraciones
+incluidas.
 
 Storage: crear/usar el bucket `catalogo` y subir `assets/catalogo/` manteniendo las
 subcarpetas `productos/`, `extras/`, `marca/`. Recién después correr `0009`.
@@ -267,8 +285,9 @@ Decisiones que conviene no re-discutir:
 - **Autorización por permiso, no por rol.** Las políticas RLS preguntan
   `tiene_permiso('venta.editar')`, nunca "es admin".
 - **El catálogo de permisos es FIJO.** `permiso` es de solo lectura incluso para el
-  admin (grant revocado, política solo de `select`). Los 21 permisos se definen en la
-  migración 0016; agregar uno nuevo es una migración, no una pantalla. Lo que el panel
+  admin (grant revocado, política solo de `select`). Los permisos se definen en
+  migraciones (21 en la 0016; hoy son 28 con los de cotización, pedido y respaldo);
+  agregar uno nuevo es una migración, no una pantalla. Lo que el panel
   gestiona es **roles**: crearlos, borrarlos y decidir qué permisos tiene cada uno
   (`rol_permiso`, la vista `v_rol_permiso` y la función `definir_permisos_rol()`, que
   recibe la lista final de códigos).
@@ -372,8 +391,11 @@ se calculan en el servidor:
 1. **Lectura** — solo Server Components, y solo a través de `src/lib/consultas.ts`
    (`obtenerProductos`, `obtenerDestacados`, `obtenerProductoPorSlug`,
    `obtenerComposicion`, `obtenerExtras`, `obtenerZonasEnvio`…). Es el único módulo que
-   habla con Supabase para leer; usa `clienteServidor()` (clave anon, sin sesión).
-   Nada de consultar la BD desde un componente de cliente.
+   habla con Supabase para leer; usa `clienteServidor()` de `src/lib/supabase/server.ts`
+   (clave anon, sin sesión; ojo: en el catálogo el archivo se llama `server.ts`, en el
+   panel `servidor.ts`). Nada de consultar la BD desde un componente de cliente: el
+   catálogo **no tiene** cliente de Supabase para el navegador (había un
+   `lib/supabase/client.ts` sin usar y se borró el 2026-10-08). No volver a crearlo.
 2. **Carrito** — vive *solo* en el navegador. `src/lib/carrito/almacen.ts` es un store
    externo sobre `localStorage` (clave `detalles-elena:carrito:v1`; cada línea se valida
    al leer) que `CarritoProvider` expone con `useSyncExternalStore`; los componentes usan
@@ -471,7 +493,7 @@ Reglas del panel:
   `perfil`, `usuario_rol`, `rol_permiso`, `bitacora` ni en las vistas del panel, y
   tampoco se pueden asignar a mano por la API (0020). No es la UI escondiendo botones:
   son políticas RLS, así que la sesión de un admin no las ve ni consultando a mano.
-  Como el admin igual tiene los 21 permisos, la diferencia práctica entre los dos roles
+  Como el admin igual tiene todos los permisos, la diferencia práctica entre los dos roles
   es exactamente esa visibilidad.
 - **Toda RPC del panel empieza con `perform public.exigir_permiso('...')`.** Las funciones
   son `security definer` y eso se saltea RLS: sin el candado, cualquier cuenta con sesión
@@ -483,6 +505,21 @@ Reglas del panel:
   a 5; `precio_final` lo pisa. La cuenta vive en `v_cotizacion` (la pantalla la repite solo para mostrar en vivo).
   Vendida en mostrador entra como línea `personalizado` con `cotizacion_id`; sus extras van a Bs 0 para que la
   entrega descuente stock.
+- **En el mostrador el precio se puede cambiar; en el catálogo web no** (0028). `crear_pedido()`
+  sigue ignorando cualquier monto que le manden —es la función del cliente anónimo y no se toca—;
+  la venta de mostrador la llama igual y después ajusta cada línea con `aplicar_precio_item()`
+  (interna, revocada), emparejando por orden y con un candado que corta si el orden no coincide.
+  Reglas: `p_precio` es lo que vale el ramo **sin** los extras escritos a mano (esos se suman
+  encima); `pedido_item.precio_lista` guarda el precio de antes del primer ajuste y **no se pisa**
+  en ajustes sucesivos; `p_extras` reemplaza la lista entera de extras a mano de esa línea.
+  Un extra escrito a mano va con `extra_id` vacío: **no descuenta inventario ni tiene costo**
+  (si lo que se agrega existe en el maestro, va por "Armar un ramo" para que el stock baje), y
+  en los reportes aparece por su nombre junto a los demás extras. Para corregir después está
+  `ajustar_item_venta()`, que pide el permiso del canal, se niega sobre lo entregado o cancelado
+  y deja bitácora (`accion = 'ajuste_precio'`). En el panel, la pieza compartida es
+  `ventas/AjusteLinea.tsx` (la usan Vender y la ficha). Ojo: si se rebaja un ramo armado, sus
+  extras del maestro quedan guardados a precio de lista, así que el ranking de extras de
+  `reporte_ventas()` no baja con la rebaja; la rebaja se mira en `rebajas` / `v_pedido_item_precio`.
 - **Pedido y venta tienen permisos distintos.** El permiso de una fila de `pedido` sale de su canal:
   `permiso_de_pedido(canal, 'ver'|'editar')` → `venta.*` si es mostrador, `pedido.*` si no. Las RPC que tocan un
   pedido llaman `exigir_permiso_pedido(id, ...)`, no `exigir_permiso('venta.editar')`.
@@ -504,7 +541,13 @@ Reglas del panel:
 
 Estructura: `src/lib/modulos.ts` es el mapa del panel (calcado del diagrama del dueño).
 De esa lista salen la barra de módulos y las pestañas de cada uno (`<Encabezado modulo=…>`).
-Una pantalla nueva se agrega ahí. Piezas compartidas: `components/ui.tsx` (cifras,
+Una pantalla nueva se agrega ahí (y si nadie tiene el permiso, la página manda a
+`/sin-permiso`). Cada módulo es una carpeta de `src/app/(panel)/` con sus `page.tsx` y **un
+solo `acciones.ts`** (`'use server'`) con todas sus escrituras: hoy hay ocho (`compras`,
+`contabilidad`, `cotizacion`, `inventario`, `productos`, `usuarios`, `ventas` y `login`).
+Una escritura nueva va al `acciones.ts` de su módulo, no en el componente.
+
+Piezas compartidas: `components/ui.tsx` (cifras,
 barras, avisos, clases de botón), `components/FiltroFechas.tsx` (rango en la URL, con
 atajos), `lib/fechas.ts` (fechas de calendario de Bolivia como texto AAAA-MM-DD, nunca
 `new Date('2026-09-01')`), `lib/useAccion.ts` (botón → server action → aviso → refresh) y
@@ -553,7 +596,7 @@ Módulos construidos (todos los del diagrama):
 
 | Módulo | Rutas |
 |---|---|
-| Administración | `/usuarios` (usuarios), `/usuarios/roles`, `/usuarios/permisos`, `/usuarios/bitacora` (reporte por fechas + usuario + entidad) |
+| Administración | `/usuarios` (usuarios), `/usuarios/roles`, `/usuarios/permisos`, `/usuarios/bitacora` (reporte por fechas + usuario + entidad), `/usuarios/respaldo` (descarga del JSON, permiso `respaldo.descargar`) |
 | Inventario | `/inventario` (stock de productos), `/inventario/extras` (con "producir" que descuenta la receta), `/inventario/movimientos` (kardex) |
 | Cotización | `/cotizacion` (lista), `/cotizacion/nueva`, `/cotizacion/[id]`: calculadora de costo y precio |
 | Productos (maestro) | `/productos` (CRUD, fotos, composición), `/productos/personalizado` (extras con receta y foto, envoltorios, `/cotizador`), `/productos/categorias` |
@@ -615,7 +658,7 @@ Bs 8,33 y falta el costo del autito).
 
 ## 8. Estado y próximos pasos
 
-Hecho (último corte: 2026-09-12):
+Hecho (último corte: 2026-09-26):
 - [x] Los dos proyectos Next.js scaffoldeados; `pnpm install` corrido en ambos
 - [x] Esquema completo de BD + RLS + `crear_pedido()`
 - [x] **Migraciones 0001–0009 aplicadas en el proyecto real** (`nrwamzgxwttgvaqqodfp`,
@@ -667,6 +710,21 @@ Hecho (último corte: 2026-09-12):
       RPC rechazan a una cuenta sin rol (42501). `build` con 36 rutas en limpio.
       Ojo: un test revertido igual consume ids; después de probar se re-sincronizan los
       contadores con `setval(..., max(id))` para que PED/COM/GAS no salten códigos.
+- [x] **Precio editable en el mostrador** (0028 + panel, 2026-10-08): la vendedora puede
+      rebajar el precio de una línea ("te lo dejo en 60") y sumarle extras escritos a mano
+      (un globo, un chocolate) con nombre y precio, tanto al vender como después, desde la
+      ficha. El catálogo web no cambia: `crear_pedido()` sigue ignorando los montos que le
+      manden. Probado con `supabase/probar-migraciones.mjs` (36 pasos sobre una base nueva):
+      precios, extras a mano, el precio de lista que no se pisa, los candados (entregado,
+      anon, el motor interno), el inventario y `reporte_ventas`. Aplicada en la base real
+      el 2026-10-24 con `aplicar-migracion.ps1` y probada ahí con sesión real: venta con
+      ramo rebajado (Bs 70 → 60) + "Globo feliz cumple" Bs 15 → la base devolvió Bs 75;
+      ajuste posterior desde la ficha (60 → 50 → 55) recalculando el total; el precio
+      tachado y el candado de la venta cancelada. Quedó **PED-00038 cancelada** en la base.
+      De paso se arregló el "¿Cuánto paga?" de la ficha, que se quedaba con el saldo viejo
+      cuando el total cambiaba en la misma pantalla (`AccionesPedido.tsx`); verificado con
+      PED-00039 (Bs 20 → 15: el botón pasó de "Cobrar Bs 20" a "Cobrar Bs 15" sin recargar).
+      Las dos ventas de prueba quedaron canceladas.
 - [x] **Superadmin probado de punta a punta** (0020): con una cuenta admin temporal y
       sesión real se comprobó que el rol `superadmin` y la cuenta que lo tiene no
       aparecen ni en las vistas ni en las tablas crudas ni en la matriz de permisos,
@@ -682,13 +740,15 @@ Pendiente, en orden:
 3. **Cargar insumos, proveedores y recetas** desde el panel (o por seed) para que el
    costeo deje de contar solo la mano de obra.
 4. Probar los módulos del panel con datos reales y ajustar lo que la dueña encuentre.
-   0001–0027 aplicadas en el proyecto real (0025 y 0026 el 2026-09-14; la **0027** el 2026-09-26 con
-   `aplicar-migracion.ps1`, ver §4). Los tipos del panel se regeneraron desde la base hasta la 0026 y los
-   de la 0027 se completaron a mano en `database.ts`: regenerarlos en la próxima migración.
+   0001–0028 aplicadas en el proyecto real (0025 y 0026 el 2026-09-14; la 0027 el 2026-09-26 y la
+   **0028** el 2026-10-24, con `aplicar-migracion.ps1`, ver §4). Los tipos del panel se regeneraron
+   desde la base hasta la 0026; los de la 0027 y la 0028 se completaron **a mano** en `database.ts`
+   (funcionan, pero conviene regenerarlos de una vez con `supabase gen types`, ver §3).
    Datos de prueba que quedaron en la base real (2026-09-14): PED-00005 (venta de Bs 1 cancelada; su
    cobro se devolvió el 2026-09-26 probando `devolver_cobro`, así que quedó tachado y en Bs 0 cobrado),
    PED-00006 (Bs 1 cobrada y entregada; la Malla se repuso con una devolución de inventario) y
-   PRD-002 "PRUEBA panel - borrar" (oculto, sin foto). Se pueden borrar desde el SQL Editor si molestan.
+   PRD-002 "PRUEBA panel - borrar" (oculto, sin foto), y PED-00038 y PED-00039 (2026-10-24, pruebas
+   del precio editable, canceladas sin cobrar). Se pueden borrar desde el SQL Editor si molestan.
    **Supabase → Authentication** (auditoría 2026-09-14, arreglado el 2026-09-26 con `ajustar-auth.ps1`):
    el registro público quedó cerrado (`disable_signup: true`; las cuentas se siguen creando con Add user)
    y la contraseña mínima en 10. Falta `site_url`, que sigue en `http://localhost:3000`: se corrige

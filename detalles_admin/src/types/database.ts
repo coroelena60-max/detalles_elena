@@ -1524,6 +1524,7 @@ export type Database = {
           nombre: string
           nota: string | null
           pedido_id: number
+          precio_lista: number | null
           precio_unitario: number
           producto_id: number | null
           subtotal: number
@@ -1541,6 +1542,7 @@ export type Database = {
           nombre: string
           nota?: string | null
           pedido_id: number
+          precio_lista?: number | null
           precio_unitario: number
           producto_id?: number | null
           subtotal: number
@@ -1558,6 +1560,7 @@ export type Database = {
           nombre?: string
           nota?: string | null
           pedido_id?: number
+          precio_lista?: number | null
           precio_unitario?: number
           producto_id?: number | null
           subtotal?: number
@@ -2702,6 +2705,45 @@ export type Database = {
         }
         Relationships: []
       }
+      v_pedido_item_precio: {
+        Row: {
+          cantidad: number | null
+          extras_libres: number | null
+          nombre: string | null
+          pedido_id: number | null
+          pedido_item_id: number | null
+          precio_lista: number | null
+          precio_ramo: number | null
+          precio_unitario: number | null
+          rebaja_total: number | null
+          rebaja_unit: number | null
+        }
+        Insert: {
+          cantidad?: number | null
+          extras_libres?: never
+          nombre?: string | null
+          pedido_id?: number | null
+          pedido_item_id?: number | null
+          precio_lista?: number | null
+          precio_ramo?: never
+          precio_unitario?: number | null
+          rebaja_total?: never
+          rebaja_unit?: never
+        }
+        Update: {
+          cantidad?: number | null
+          extras_libres?: never
+          nombre?: string | null
+          pedido_id?: number | null
+          pedido_item_id?: number | null
+          precio_lista?: number | null
+          precio_ramo?: never
+          precio_unitario?: number | null
+          rebaja_total?: never
+          rebaja_unit?: never
+        }
+        Relationships: []
+      }
       v_pedido_saldo: {
         Row: {
           codigo: string | null
@@ -2999,6 +3041,10 @@ export type Database = {
       }
     }
     Functions: {
+      ajustar_item_venta: {
+        Args: { p_extras?: Json; p_item_id: number; p_precio?: number }
+        Returns: Json
+      }
       anular_compra: {
         Args: { p_compra_id: number; p_motivo: string }
         Returns: Json

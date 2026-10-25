@@ -20,6 +20,7 @@ interface Reporte {
     cancelados: number
     vendido: number
     descuentos: number
+    rebajas: number
     ticket_promedio: number
     conversion_pct: number
   }
@@ -69,7 +70,10 @@ export default async function PaginaReporteVentas({
             <Cifra
               etiqueta="Vendido"
               valor={bs(r.resumen.vendido)}
-              detalle={`${numero(r.resumen.confirmados)} pedido${r.resumen.confirmados === 1 ? '' : 's'} confirmado${r.resumen.confirmados === 1 ? '' : 's'}`}
+              detalle={
+                `${numero(r.resumen.confirmados)} pedido${r.resumen.confirmados === 1 ? '' : 's'} confirmado${r.resumen.confirmados === 1 ? '' : 's'}` +
+                (Number(r.resumen.rebajas) > 0 ? ` · ${bs(r.resumen.rebajas)} de rebaja` : '')
+              }
               tono="destacado"
             />
             <Cifra etiqueta="Ticket promedio" valor={bs(r.resumen.ticket_promedio)} />

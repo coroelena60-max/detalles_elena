@@ -9,6 +9,7 @@ import { Aviso, BOTON, BOTON_SECUNDARIO, CAMPO } from '@/components/ui'
 import type { MetodoPago } from '@/lib/estados'
 import { bs } from '@/lib/formato'
 import { venderEnMostrador, type LineaMostrador } from '../acciones'
+import AjusteLinea, { ajusteParaGuardar, precioConAjuste, SIN_AJUSTE, type Ajuste } from '../AjusteLinea'
 import ArmarRamo, { type Envoltorio, type ExtraArmado, type RamoArmado } from './ArmarRamo'
 
 export interface Vendible {
@@ -32,7 +33,10 @@ interface Linea {
   clave: string
   tipo: 'producto' | 'extra' | 'personalizado' | 'cotizacion'
   nombre: string
+  /** lo que se cobra, con la rebaja y los extras escritos a mano */
   precio: number
+  /** el precio de siempre, para mostrarlo tachado cuando se rebaja */
+  precioLista: number
   imagen: string | null
   cantidad: number
   dedicatoria: string
@@ -90,6 +94,8 @@ export default function VentaMostrador({
       : {},
   )
   const [dedicando, setDedicando] = useState<Set<string>>(new Set())
+  // precio rebajado y extras escritos a mano, por línea del ticket
+  const [ajustes, setAjustes] = useState<Record<string, Ajuste>>({})
 
   const [conCliente, setConCliente] = useState(false)
   const [cliente, setCliente] = useState({ nombre: '', telefono: '' })
@@ -119,12 +125,22 @@ export default function VentaMostrador({
   const lineas: Linea[] = [
     ...Object.entries(carrito)
       .filter(([, l]) => l.cantidad > 0)
-      .map(([clave, l]) => ({ ...vendibles.find((v) => v.clave === clave)!, ...l, detalle: undefined })),
+      .map(([clave, l]) => {
+        const v = vendibles.find((x) => x.clave === clave)!
+        return {
+          ...v,
+          ...l,
+          detalle: undefined,
+          precioLista: v.precio,
+          precio: precioConAjuste(v.precio, ajustes[clave]),
+        }
+      }),
     ...ramos.map((r) => ({
       clave: r.clave,
       tipo: 'personalizado' as const,
       nombre: r.nombre,
-      precio: r.precio,
+      precioLista: r.precio,
+      precio: precioConAjuste(r.precio, ajustes[r.clave]),
       imagen: r.imagen,
       cantidad: r.cantidad,
       dedicatoria: r.dedicatoria,
@@ -135,7 +151,16 @@ export default function VentaMostrador({
       .flatMap(([id, l]) => {
         const c = cotizaciones.find((x) => x.id === Number(id))
         return c
-          ? [{ clave: `c${c.id}`, tipo: 'cotizacion' as const, nombre: c.nombre, precio: c.precio, imagen: null, cantidad: l.cantidad, dedicatoria: l.dedicatoria }]
+          ? [{
+              clave: `c${c.id}`,
+              tipo: 'cotizacion' as const,
+              nombre: c.nombre,
+              precioLista: c.precio,
+              precio: precioConAjuste(c.precio, ajustes[`c${c.id}`]),
+              imagen: null,
+              cantidad: l.cantidad,
+              dedicatoria: l.dedicatoria,
+            }]
           : []
       }),
   ]
@@ -188,6 +213,7 @@ export default function VentaMostrador({
     setRamos([])
     setCots({})
     setDedicando(new Set())
+    setAjustes({})
     setConCliente(false)
     setCliente({ nombre: '', telefono: '' })
     setConNota(false)
@@ -204,18 +230,41 @@ export default function VentaMostrador({
         .filter(([, l]) => l.cantidad > 0)
         .map(([clave, l]) => {
           const v = vendibles.find((x) => x.clave === clave)!
-          return { tipo: v.tipo, id: v.id, cantidad: l.cantidad, dedicatoria: l.dedicatoria }
+          const aj = ajusteParaGuardar(ajustes[clave])
+          return {
+            tipo: v.tipo,
+            id: v.id,
+            cantidad: l.cantidad,
+            dedicatoria: l.dedicatoria,
+            precio: aj.precio,
+            extrasLibres: aj.extras,
+          }
         }),
-      ...ramos.map((r) => ({
-        tipo: 'personalizado' as const,
-        id: r.envoltorioId,
-        cantidad: r.cantidad,
-        dedicatoria: r.dedicatoria,
-        extras: r.extras.map((x) => ({ extra_id: x.id, cantidad: x.cantidad })),
-      })),
+      ...ramos.map((r) => {
+        const aj = ajusteParaGuardar(ajustes[r.clave])
+        return {
+          tipo: 'personalizado' as const,
+          id: r.envoltorioId,
+          cantidad: r.cantidad,
+          dedicatoria: r.dedicatoria,
+          extras: r.extras.map((x) => ({ extra_id: x.id, cantidad: x.cantidad })),
+          precio: aj.precio,
+          extrasLibres: aj.extras,
+        }
+      }),
       ...Object.entries(cots)
         .filter(([, l]) => l.cantidad > 0)
-        .map(([id, l]) => ({ tipo: 'cotizacion' as const, id: Number(id), cantidad: l.cantidad, dedicatoria: l.dedicatoria })),
+        .map(([id, l]) => {
+          const aj = ajusteParaGuardar(ajustes[`c${id}`])
+          return {
+            tipo: 'cotizacion' as const,
+            id: Number(id),
+            cantidad: l.cantidad,
+            dedicatoria: l.dedicatoria,
+            precio: aj.precio,
+            extrasLibres: aj.extras,
+          }
+        }),
     ]
     setError(null)
     iniciar(async () => {
@@ -419,7 +468,14 @@ export default function VentaMostrador({
                       <div className="min-w-0 flex-1">
                         <p className="line-clamp-2 text-sm leading-snug">{l.nombre}</p>
                         {l.detalle && <p className="truncate text-xs text-tinta-suave">{l.detalle}</p>}
-                        <p className="text-sm font-semibold tabular-nums">{bs(l.precio * l.cantidad)}</p>
+                        <p className="text-sm font-semibold tabular-nums">
+                          {bs(l.precio * l.cantidad)}
+                          {l.precio !== l.precioLista && (
+                            <span className="ml-2 font-normal text-tinta-suave line-through">
+                              {bs(l.precioLista * l.cantidad)}
+                            </span>
+                          )}
+                        </p>
                       </div>
                       <div className="flex items-center gap-1">
                         <button type="button" onClick={() => cambiar(l.clave, -1)} aria-label={`Uno menos de ${l.nombre}`} className="grid size-9 place-items-center rounded-full border border-linea text-tinta-suave transition hover:border-alerta hover:text-alerta">
@@ -451,6 +507,12 @@ export default function VentaMostrador({
                           Dedicatoria
                         </button>
                       ))}
+                    <AjusteLinea
+                      nombre={l.nombre}
+                      precioLista={l.precioLista}
+                      valor={ajustes[l.clave] ?? SIN_AJUSTE}
+                      alCambiar={(a) => setAjustes((x) => ({ ...x, [l.clave]: a }))}
+                    />
                   </li>
                 )
               })}

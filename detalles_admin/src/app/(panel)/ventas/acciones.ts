@@ -100,6 +100,74 @@ export interface LineaMostrador {
   cantidad: number
   dedicatoria?: string
   extras?: { extra_id: number; cantidad: number }[]
+  /** precio por unidad si se rebajó o se cobró de más; vacío = el de lista */
+  precio?: number | null
+  /** lo que se agrega escrito a mano (un globo, un chocolate): suma al precio */
+  extrasLibres?: ExtraLibre[]
+}
+
+/** `type` y no `interface`: así se le puede pasar tal cual a la base como jsonb. */
+export type ExtraLibre = {
+  nombre: string
+  precio: number
+}
+
+/**
+ * Precio y extras escritos a mano. La base los vuelve a revisar (y es la que
+ * manda), pero conviene frenar acá para avisar en lenguaje de tienda.
+ */
+function revisarAjuste(precio: number | null | undefined, extras: ExtraLibre[]): string | null {
+  if (precio !== null && precio !== undefined) {
+    if (!Number.isFinite(precio) || precio < 0) return 'Revisá el precio: tiene que ser un número de 0 para arriba.'
+    if (precio > 100000) return 'Ese precio es demasiado alto. Revisalo.'
+  }
+  if (extras.length > 10) return 'Son demasiados extras para una sola línea.'
+  for (const e of extras) {
+    const nombre = e.nombre.trim()
+    if (nombre.length < 2 || nombre.length > 80) return 'Escribí qué es el extra (entre 2 y 80 letras).'
+    if (!Number.isFinite(e.precio) || e.precio < 0) return `Revisá el precio de "${nombre}".`
+    if (e.precio > 100000) return `El precio de "${nombre}" es demasiado alto.`
+  }
+  return null
+}
+
+/** Los extras escritos a mano que de verdad tienen algo escrito. */
+function limpiarExtras(extras: ExtraLibre[] | null | undefined): ExtraLibre[] {
+  return (extras ?? [])
+    .filter((e) => e.nombre.trim() !== '')
+    .map((e) => ({ nombre: e.nombre.trim(), precio: e.precio }))
+}
+
+/**
+ * Cambiar el precio de una línea de una venta o de un pedido ya registrado, y
+ * sus extras escritos a mano. La base pide el permiso que corresponde al canal
+ * (venta.editar o pedido.editar), no deja tocar lo entregado y deja bitácora.
+ */
+export async function ajustarPrecioItem(
+  codigo: string,
+  itemId: number,
+  precio: number | null,
+  extras: ExtraLibre[] | null,
+): Promise<Resultado> {
+  const limpios = limpiarExtras(extras)
+  const problema = revisarAjuste(precio, limpios)
+  if (problema) return { ok: false, mensaje: problema }
+
+  const sb = await clienteServidor()
+  const { error } = await sb.rpc('ajustar_item_venta', {
+    p_item_id: itemId,
+    p_precio: precio ?? undefined,
+    // null no alcanza: la base distingue "no toques los extras" de "dejalos en ninguno"
+    p_extras: extras === null ? undefined : limpios,
+  })
+  if (error) return { ok: false, mensaje: traducirError(error.message) }
+
+  revalidatePath(`/ventas/${codigo}`)
+  revalidatePath(`/pedidos/${codigo}`)
+  revalidatePath('/ventas')
+  revalidatePath('/pedidos')
+  revalidatePath('/')
+  return { ok: true, mensaje: 'Precio actualizado.' }
 }
 
 export async function crearVentaMostrador(
@@ -115,23 +183,38 @@ export async function crearVentaMostrador(
       return { ok: false, mensaje: 'El teléfono tiene que tener entre 7 y 15 dígitos.' }
     }
   }
-  const items = lineas
-    .filter((l) => l.cantidad > 0)
-    .map((l) => {
-      const dedicatoria = l.dedicatoria?.trim() || undefined
-      if (l.tipo === 'producto') return { tipo: 'producto', producto_id: l.id, cantidad: l.cantidad, dedicatoria }
-      if (l.tipo === 'cotizacion') return { tipo: 'cotizacion', cotizacion_id: l.id, cantidad: l.cantidad, dedicatoria }
-      if (l.tipo === 'personalizado') {
-        return {
-          tipo: 'personalizado',
-          envoltorio_id: l.id,
-          cantidad: l.cantidad,
-          dedicatoria,
-          extras: (l.extras ?? []).filter((e) => e.cantidad > 0),
-        }
+  const enJuego = lineas.filter((l) => l.cantidad > 0)
+  for (const l of enJuego) {
+    const problema = revisarAjuste(l.precio, limpiarExtras(l.extrasLibres))
+    if (problema) return { ok: false, mensaje: problema }
+  }
+
+  const items = enJuego.map((l) => {
+    const dedicatoria = l.dedicatoria?.trim() || undefined
+    // lo que la vendedora cambió a mano; sin esto, la base cobra el precio de lista
+    const libres = limpiarExtras(l.extrasLibres)
+    const ajuste = {
+      ...(typeof l.precio === 'number' ? { precio_unitario: l.precio } : {}),
+      ...(libres.length > 0 ? { extras_libres: libres } : {}),
+    }
+    if (l.tipo === 'producto') {
+      return { tipo: 'producto', producto_id: l.id, cantidad: l.cantidad, dedicatoria, ...ajuste }
+    }
+    if (l.tipo === 'cotizacion') {
+      return { tipo: 'cotizacion', cotizacion_id: l.id, cantidad: l.cantidad, dedicatoria, ...ajuste }
+    }
+    if (l.tipo === 'personalizado') {
+      return {
+        tipo: 'personalizado',
+        envoltorio_id: l.id,
+        cantidad: l.cantidad,
+        dedicatoria,
+        extras: (l.extras ?? []).filter((e) => e.cantidad > 0),
+        ...ajuste,
       }
-      return { tipo: 'extra', extra_id: l.id, cantidad: l.cantidad }
-    })
+    }
+    return { tipo: 'extra', extra_id: l.id, cantidad: l.cantidad, ...ajuste }
+  })
   if (items.length === 0) return { ok: false, mensaje: 'Agregá al menos un producto o extra.' }
 
   const sb = await clienteServidor()

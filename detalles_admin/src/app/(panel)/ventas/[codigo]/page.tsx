@@ -11,6 +11,10 @@ import { clienteServidor } from '@/lib/supabase/servidor'
 import AnularConMotivo from '@/components/AnularConMotivo'
 import { devolverCobro } from '../acciones'
 import AccionesPedido from './AccionesPedido'
+import EditarPrecio from './EditarPrecio'
+
+/** Entregado o cancelado: la base ya no deja tocar el precio. */
+const FINALES = new Set(['entregado', 'cancelado'])
 
 export const dynamic = 'force-dynamic'
 
@@ -42,10 +46,11 @@ export default async function PaginaPedido({
        cliente:cliente_id (nombre, telefono, email),
        entrega (direccion, referencia, destinatario, telefono, fecha_entrega, instrucciones,
                 zona:zona_envio_id (nombre, costo_referencia)),
-       items:pedido_item (id, tipo, nombre, precio_unitario, cantidad, subtotal, dedicatoria,
+       items:pedido_item (id, tipo, nombre, precio_unitario, precio_lista, cantidad, subtotal, dedicatoria,
                           producto:producto_id (imagenes:producto_imagen (url, es_principal, orden)),
                           extra:extra_id (imagen_url),
-                          extras:pedido_item_extra (id, nombre, cantidad, subtotal, extra:extra_id (imagen_url)))`,
+                          extras:pedido_item_extra (id, nombre, cantidad, subtotal, extra_id,
+                                                    extra:extra_id (imagen_url)))`,
     )
     .eq('codigo', codigo)
     .maybeSingle()
@@ -124,8 +129,19 @@ export default async function PaginaPedido({
                   nombre: string
                   cantidad: number
                   subtotal: number
+                  extra_id: number | null
                   extra: { imagen_url: string | null } | null
                 }[]
+                // los que se escribieron a mano (no existen en el maestro) se
+                // pueden editar; lo demás es la receta del ramo
+                const libres = extras
+                  .filter((e) => e.extra_id === null)
+                  .map((e) => ({ nombre: e.nombre, precio: Number(e.subtotal) }))
+                const precioRamo = Number(i.precio_unitario) - libres.reduce((s, e) => s + e.precio, 0)
+                // se tacha el precio viejo solo si es otro número que el que se cobra
+                // (rebajar y sumar un extra puede dar justo el mismo total)
+                const rebajado =
+                  i.precio_lista !== null && Number(i.precio_lista) * i.cantidad !== Number(i.subtotal)
                 // producto → su foto principal; extra suelto → su foto;
                 // armado personalizado → la del primer extra que tenga foto
                 const foto =
@@ -151,9 +167,24 @@ export default async function PaginaPedido({
                             «{i.dedicatoria}»
                           </p>
                         )}
+                        {puedeEditarPedido && !FINALES.has(pedido.estado) && (
+                          <EditarPrecio
+                            codigo={codigo}
+                            itemId={i.id}
+                            nombre={i.nombre}
+                            cantidad={i.cantidad}
+                            precioRamo={precioRamo}
+                            extrasLibres={libres}
+                          />
+                        )}
                       </div>
-                      <span className="shrink-0 text-sm font-semibold">
+                      <span className="shrink-0 text-right text-sm font-semibold">
                         {bs(i.subtotal)}
+                        {rebajado && (
+                          <span className="block text-xs font-normal text-tinta-suave line-through">
+                            {bs(Number(i.precio_lista) * i.cantidad)}
+                          </span>
+                        )}
                       </span>
                     </div>
                   </li>
